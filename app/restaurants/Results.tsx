@@ -5,8 +5,8 @@ import { ResultsClient } from "./ResultsClient"
 export const revalidate = 600 // 10 minutes
 
 export async function Results() {
-  // Simulate data fetching with cache - freeze the data to prevent mutations
-  const initialData = Object.freeze([...mockRestaurants])
+  // Simulate data fetching with cache - don't use Object.freeze
+  const initialData = [...mockRestaurants]
 
   return <ResultsClient initialData={initialData} />
 }

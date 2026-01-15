@@ -26,22 +26,7 @@ async function RestaurantPageContent({ params }: Props) {
   const restaurant = await getRestaurantBySlug(slug)
   if (!restaurant) notFound()
 
-  // Calculate similar restaurants server-side (best practice)
-  const similarRestaurants = mockRestaurants
-    .filter((r) => r.id !== restaurant.id)
-    .slice(0, 8)
-    .map((r) => ({
-      id: r.id,
-      slug: r.slug,
-      name: r.name,
-      images: r.images,
-      rating: r.rating,
-      cuisine: r.cuisine,
-      district: r.district,
-      emirate: r.emirate,
-    }))
-
-  return <RestaurantDetailClient restaurant={restaurant} similarRestaurants={similarRestaurants} />
+  return <RestaurantDetailClient restaurant={restaurant} />
 }
 
 // PPR-compatible: Wrapper with Suspense boundary

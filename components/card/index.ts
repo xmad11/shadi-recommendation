@@ -14,16 +14,13 @@ export type {
   ShadiRestaurant,
   RestaurantCardProps,
   UAEEmirate,
-  ShadiBadge,
   PriceTier,
-  ThemeCategory,
-  DeliveryPlatform,
-  OperatingHours,
+  MealType,
+  AtmosphereType,
   MapCoordinates,
-  RestaurantLocation,
 } from "@/types/restaurant"
 
-export { PRICE_LABELS, formatPrice, priceTierValue, toRestaurantLocation } from "@/types/restaurant"
+export { formatPrice, priceTierValue } from "@/types/restaurant"
 
 // Variants (pure UI components)
 export * from "./variants"

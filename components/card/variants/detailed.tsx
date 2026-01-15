@@ -1,6 +1,6 @@
 import { CardCarousel } from "@/components/carousel"
 import { MapPinIcon } from "@/components/icons"
-import type { PriceTier, RestaurantLocation } from "@/types/restaurant"
+import type { PriceTier, MapCoordinates, UAEEmirate } from "@/types/restaurant"
 import { memo } from "react"
 
 export interface DetailedVariantProps {
@@ -9,7 +9,12 @@ export interface DetailedVariantProps {
   title: string
   category?: string
   price?: PriceTier
-  location?: RestaurantLocation
+  location?: {
+    emirate?: UAEEmirate
+    district?: string
+    address?: string
+    mapCoordinates?: MapCoordinates
+  }
   features?: string[]
   href?: string
 }
