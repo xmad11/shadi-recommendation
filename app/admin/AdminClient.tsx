@@ -203,7 +203,7 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
       {/* Add Restaurant Modal */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl p-6 min-w-[300px] w-[600px] max-w-[95vw] max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4">Add New Restaurant</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
