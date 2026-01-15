@@ -27,8 +27,9 @@ export const BackButton = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTM
           "bg-[var(--bg)]",
           "shadow-lg",
           "border border-[var(--fg-10)]",
-          "text-[var(--fg)]",
-          "hover:text-[var(--color-primary)]",
+          // Phase 3 Fix: Force text color for visibility
+          "text-gray-900",
+          "hover:text-gray-700",
           "hover:bg-[var(--fg-5)]",
           "transition-all",
           className

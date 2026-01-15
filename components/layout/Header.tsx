@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   APP HEADER - Simple header with logo and menu button
+   APP HEADER - Simple header with logo, menu button, and language toggle
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 "use client"
@@ -7,6 +7,7 @@
 import { Bars3BottomRightIcon } from "@/components/icons"
 import { BackButton } from "@/components/navigation/BackButton"
 import { useNavigation } from "@/components/navigation/NavigationProvider"
+import { useLanguage } from "@/context/LanguageProvider"
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import SideMenu from "./SideMenu"
 
@@ -18,6 +19,7 @@ const SCROLL_GLASS_THRESHOLD = 20
 
 function AppHeaderComponent() {
   const { activePanel, openMenu, closeAll, showBackButton } = useNavigation()
+  const { buttonLabel, toggleLanguage } = useLanguage()
   const [visible, setVisible] = useState(true)
   const [isScrolled, setIsScrolled] = useState(false)
   const lastScrollY = useRef(0)
@@ -109,6 +111,16 @@ function AppHeaderComponent() {
 
           {/* Actions */}
           <div className="flex items-center gap-[var(--header-actions-gap)]">
+            {/* Language Toggle Button */}
+            <button
+              type="button"
+              onClick={toggleLanguage}
+              className="px-3 py-1.5 rounded-lg bg-[var(--fg-10)] text-[var(--fg)] font-medium hover:bg-[var(--fg-20)] transition-colors touch-target"
+              aria-label="Toggle language"
+            >
+              {buttonLabel}
+            </button>
+
             <button
               type="button"
               onClick={handleMenuClick}

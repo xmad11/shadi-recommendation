@@ -3,6 +3,7 @@ import { Inter } from "next/font/google"
 import "@/styles/globals.css"
 import { Providers } from "@/components/layout/Providers"
 import { AppHeader } from "@/components/layout/Header"
+import { getLanguage, getLanguageDirection, DEFAULT_LANGUAGE } from "@/lib/language"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -11,11 +12,14 @@ export const metadata: Metadata = {
   description: "Restaurant recommendations in UAE",
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const language = await getLanguage()
+  const direction = getLanguageDirection(language)
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={language} dir={direction} suppressHydrationWarning>
       <body className={inter.className}>
-        <Providers>
+        <Providers initialLanguage={language}>
           <AppHeader />
           <main className="min-h-[var(--layout-min-height)] pt-[var(--header-total-height)]">
             {children}
