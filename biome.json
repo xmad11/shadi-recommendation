@@ -1,0 +1,82 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+
+  "files": {
+    "ignore": [
+      ".next/**",
+      "dist/**",
+      "build/**",
+      "node_modules/**",
+      ".turbo/**",
+      "coverage/**",
+      "*.lock",
+      "*.log",
+      "next-env.d.ts",
+      "styles/tokens*.css",
+      "styles/themes.css"
+    ]
+  },
+
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+
+  "organizeImports": {
+    "enabled": true
+  },
+
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+
+      "a11y": {
+        "useSemanticElements": "off"
+      },
+
+      "complexity": {
+        "noForEach": "off"
+      },
+
+      "correctness": {
+        "noUnusedVariables": "error",
+        "useExhaustiveDependencies": "error",
+        "noUnknownProperty": "off"
+      },
+
+      "suspicious": {
+        "noExplicitAny": "off",
+        "noConsoleLog": "off",
+        "noArrayIndexKey": "warn"
+      },
+
+      "style": {
+        "useConst": "error",
+        "useFragmentSyntax": "error",
+        "noNonNullAssertion": "off"
+      },
+
+      "performance": {
+        "noDelete": "error"
+      }
+    }
+  },
+
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "jsxQuoteStyle": "double",
+      "trailingCommas": "es5",
+      "semicolons": "asNeeded"
+    }
+  },
+
+  "css": {
+    "formatter": {
+      "enabled": true
+    }
+  }
+}
