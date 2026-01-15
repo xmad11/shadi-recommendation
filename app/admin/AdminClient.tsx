@@ -4,6 +4,7 @@ import { memo, useState, useCallback, useMemo, useRef } from "react"
 import { RestaurantCard } from "@/components/card"
 import { FilterSystem, type CuisineOption, type MealOption, type AtmosphereOption } from "@/components/search/FilterSystem"
 import { SortButton, type SortOptionId } from "@/components/search/SortSystem"
+import { ChevronDown, XMarkIcon } from "@/components/icons"
 import { priceTierValue } from "@/types/restaurant"
 import type { ShadiRestaurant } from "@/types/restaurant"
 
@@ -35,6 +36,115 @@ const CONTACT_OPTIONS = [
   { id: "zomato", label: "Zomato", icon: "🍽️", placeholder: "Order link" },
 ]
 
+const EMIRATES = [
+  { id: "Abu Dhabi", label: "Abu Dhabi" },
+  { id: "Dubai", label: "Dubai" },
+  { id: "Sharjah", label: "Sharjah" },
+  { id: "Ajman", label: "Ajman" },
+  { id: "Umm Al Quwain", label: "Umm Al Quwain" },
+  { id: "Ras Al Khaimah", label: "Ras Al Khaimah" },
+  { id: "Fujairah", label: "Fujairah" },
+]
+
+const MEAL_OPTIONS = [
+  { id: "Breakfast", label: "Breakfast" },
+  { id: "Lunch", label: "Lunch" },
+  { id: "Dinner", label: "Dinner" },
+]
+
+const CUISINE_OPTIONS = [
+  { id: "emirati", label: "Emirati" },
+  { id: "arabic", label: "Arabic" },
+  { id: "lebanese", label: "Lebanese" },
+  { id: "indian", label: "Indian" },
+  { id: "pakistani", label: "Pakistani" },
+  { id: "chinese", label: "Chinese" },
+  { id: "japanese", label: "Japanese" },
+  { id: "thai", label: "Thai" },
+  { id: "italian", label: "Italian" },
+  { id: "seafood", label: "Seafood" },
+  { id: "international", label: "International" },
+]
+
+const ATMOSPHERE_OPTIONS = [
+  { id: "Romantic", label: "Romantic" },
+  { id: "Casual", label: "Casual" },
+  { id: "Fine Dining", label: "Fine Dining" },
+  { id: "Outdoor", label: "Outdoor" },
+  { id: "Family Friendly", label: "Family Friendly" },
+  { id: "Live Music", label: "Live Music" },
+  { id: "View", label: "View" },
+]
+
+const PRICE_OPTIONS = [
+  { id: "$", label: "$ - Budget-friendly" },
+  { id: "$$", label: "$$ - Moderate" },
+  { id: "$$$", label: "$$$ - Expensive" },
+  { id: "$$$$", label: "$$$$ - Very Expensive" },
+]
+
+/* =========================
+   Multi-Select Dropdown
+========================= */
+
+interface MultiSelectDropdownProps {
+  label: string
+  selected: string[]
+  options: readonly { id: string; label: string }[]
+  onChange: (values: string[]) => void
+}
+
+function MultiSelectDropdown({ label, selected, options, onChange }: MultiSelectDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false)
+
+  const toggleOption = (value: string) => {
+    if (selected.includes(value)) {
+      onChange(selected.filter((v) => v !== value))
+    } else {
+      onChange([...selected, value])
+    }
+  }
+
+  const selectedLabels = selected.map((s) => options.find((o) => o.id === s)?.label || s)
+
+  return (
+    <div className="relative">
+      <label className="block text-sm font-medium mb-1 text-[var(--fg)]">{label}</label>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full px-3 py-2 border border-[var(--fg-20)] rounded-lg bg-[var(--color-white)] text-[var(--fg)] text-left flex items-center justify-between"
+      >
+        <span className="truncate">
+          {selected.length > 0 ? selectedLabels.join(", ") : `Select ${label.toLowerCase()}`}
+        </span>
+        <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+      </button>
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
+          <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-[var(--color-white)] border border-[var(--fg-10)] rounded-lg shadow-lg max-h-48 overflow-y-auto">
+            {options.map((option) => (
+              <label
+                key={option.id}
+                className="flex items-center gap-2 px-3 py-2 hover:bg-[var(--fg-5)] cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={selected.includes(option.id)}
+                  onChange={() => toggleOption(option.id)}
+                  className="w-4 h-4 rounded"
+                />
+                <span className="text-sm text-[var(--fg)]">{option.label}</span>
+              </label>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 interface AdminClientProps {
   initialRestaurants: ShadiRestaurant[]
 }
@@ -46,16 +156,16 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [newRestaurant, setNewRestaurant] = useState({
     name: "",
-    cuisine: "",
+    emirate: "Abu Dhabi",
+    district: "",
+    address: "",
+    meals: [] as string[],
+    cuisines: [] as string[],
+    atmospheres: [] as string[],
     price: "$" as const,
     description: "",
     images: [] as string[],
     mainImageIndex: 0,
-    district: "",
-    emirate: "",
-    address: "",
-    meals: [] as string[],
-    atmosphere: [] as string[],
     contacts: [] as ContactInfo[],
   })
 
@@ -133,7 +243,7 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
   }, [])
 
   const handleAddRestaurant = useCallback(() => {
-    if (!newRestaurant.name || !newRestaurant.cuisine) {
+    if (!newRestaurant.name || newRestaurant.cuisines.length === 0) {
       alert("Please fill in at least the name and cuisine")
       return
     }
@@ -144,31 +254,31 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
       id: `rest-${Date.now()}`,
       slug: newRestaurant.name.toLowerCase().replace(/\s+/g, "-"),
       name: newRestaurant.name,
-      cuisine: newRestaurant.cuisine,
+      cuisine: newRestaurant.cuisines[0], // Primary cuisine
       price: newRestaurant.price,
       description: newRestaurant.description,
       image: mainImage,
       images: newRestaurant.images.length > 0 ? newRestaurant.images : [mainImage],
       meals: newRestaurant.meals.length > 0 ? newRestaurant.meals : ["Breakfast", "Lunch", "Dinner"],
-      atmosphere: newRestaurant.atmosphere.length > 0 ? newRestaurant.atmosphere : ["Casual"],
+      atmosphere: newRestaurant.atmospheres.length > 0 ? newRestaurant.atmospheres : ["Casual"],
       district: newRestaurant.district,
-      emirate: (newRestaurant.emirate || "Dubai") as any,
+      emirate: newRestaurant.emirate as any,
       addedDate: new Date().toISOString(),
     }
 
     setData((prev) => [restaurant, ...prev])
     setNewRestaurant({
       name: "",
-      cuisine: "",
+      emirate: "Abu Dhabi",
+      district: "",
+      address: "",
+      meals: [],
+      cuisines: [],
+      atmospheres: [],
       price: "$",
       description: "",
       images: [],
       mainImageIndex: 0,
-      district: "",
-      emirate: "",
-      address: "",
-      meals: [],
-      atmosphere: [],
       contacts: [],
     })
     setIsAddModalOpen(false)
@@ -350,66 +460,89 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
               />
             </div>
 
-            {/* Location */}
+            {/* Emirate */}
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-1 text-[var(--fg)]">Location</label>
-              <div className="grid grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  value={newRestaurant.district}
-                  onChange={(e) => setNewRestaurant({ ...newRestaurant, district: e.target.value })}
-                  className="px-3 py-2 border border-[var(--fg-20)] rounded-lg bg-[var(--color-white)] text-[var(--fg)]"
-                  placeholder="District"
-                />
-                <select
-                  value={newRestaurant.emirate}
-                  onChange={(e) => setNewRestaurant({ ...newRestaurant, emirate: e.target.value })}
-                  className="px-3 py-2 border border-[var(--fg-20)] rounded-lg bg-[var(--color-white)] text-[var(--fg)]"
-                >
-                  <option value="">Select Emirate</option>
-                  <option value="Dubai">Dubai</option>
-                  <option value="Abu Dhabi">Abu Dhabi</option>
-                  <option value="Sharjah">Sharjah</option>
-                  <option value="Ajman">Ajman</option>
-                  <option value="Umm Al Quwain">Umm Al Quwain</option>
-                  <option value="Ras Al Khaimah">Ras Al Khaimah</option>
-                  <option value="Fujairah">Fujairah</option>
-                </select>
-              </div>
+              <label className="block text-sm font-medium mb-1 text-[var(--fg)]">Emirate</label>
+              <select
+                value={newRestaurant.emirate}
+                onChange={(e) => setNewRestaurant({ ...newRestaurant, emirate: e.target.value })}
+                className="w-full px-3 py-2 border border-[var(--fg-20)] rounded-lg bg-[var(--color-white)] text-[var(--fg)]"
+              >
+                {EMIRATES.map((emirate) => (
+                  <option key={emirate.id} value={emirate.id}>
+                    {emirate.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Meal Type (Multi-select) */}
+            <div className="mb-4">
+              <MultiSelectDropdown
+                label="Meal Type"
+                selected={newRestaurant.meals}
+                options={MEAL_OPTIONS}
+                onChange={(values) => setNewRestaurant({ ...newRestaurant, meals: values })}
+              />
+            </div>
+
+            {/* Cuisine (Multi-select) */}
+            <div className="mb-4">
+              <MultiSelectDropdown
+                label="Cuisine *"
+                selected={newRestaurant.cuisines}
+                options={CUISINE_OPTIONS}
+                onChange={(values) => setNewRestaurant({ ...newRestaurant, cuisines: values })}
+              />
+            </div>
+
+            {/* Atmosphere (Multi-select) */}
+            <div className="mb-4">
+              <MultiSelectDropdown
+                label="Atmosphere"
+                selected={newRestaurant.atmospheres}
+                options={ATMOSPHERE_OPTIONS}
+                onChange={(values) => setNewRestaurant({ ...newRestaurant, atmospheres: values })}
+              />
+            </div>
+
+            {/* Price Range */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1 text-[var(--fg)]">Price Range</label>
+              <select
+                value={newRestaurant.price}
+                onChange={(e) => setNewRestaurant({ ...newRestaurant, price: e.target.value as any })}
+                className="w-full px-3 py-2 border border-[var(--fg-20)] rounded-lg bg-[var(--color-white)] text-[var(--fg)]"
+              >
+                {PRICE_OPTIONS.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Location Details */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1 text-[var(--fg)]">District</label>
+              <input
+                type="text"
+                value={newRestaurant.district}
+                onChange={(e) => setNewRestaurant({ ...newRestaurant, district: e.target.value })}
+                className="w-full px-3 py-2 border border-[var(--fg-20)] rounded-lg bg-[var(--color-white)] text-[var(--fg)]"
+                placeholder="e.g., Downtown, Marina"
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1 text-[var(--fg)]">Full Address</label>
               <input
                 type="text"
                 value={newRestaurant.address}
                 onChange={(e) => setNewRestaurant({ ...newRestaurant, address: e.target.value })}
-                className="w-full mt-2 px-3 py-2 border border-[var(--fg-20)] rounded-lg bg-[var(--color-white)] text-[var(--fg)]"
-                placeholder="Full address"
+                className="w-full px-3 py-2 border border-[var(--fg-20)] rounded-lg bg-[var(--color-white)] text-[var(--fg)]"
+                placeholder="Building, street, area"
               />
-            </div>
-
-            {/* Cuisine & Price */}
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <div>
-                <label className="block text-sm font-medium mb-1 text-[var(--fg)]">Cuisine *</label>
-                <input
-                  type="text"
-                  value={newRestaurant.cuisine}
-                  onChange={(e) => setNewRestaurant({ ...newRestaurant, cuisine: e.target.value })}
-                  className="w-full px-3 py-2 border border-[var(--fg-20)] rounded-lg bg-[var(--color-white)] text-[var(--fg)]"
-                  placeholder="e.g., Italian, Japanese"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1 text-[var(--fg)]">Price Tier</label>
-                <select
-                  value={newRestaurant.price}
-                  onChange={(e) => setNewRestaurant({ ...newRestaurant, price: e.target.value as any })}
-                  className="w-full px-3 py-2 border border-[var(--fg-20)] rounded-lg bg-[var(--color-white)] text-[var(--fg)]"
-                >
-                  <option value="$">$ - Budget-friendly</option>
-                  <option value="$$">$$ - Moderate</option>
-                  <option value="$$$">$$$ - Expensive</option>
-                  <option value="$$$$">$$$$ - Very Expensive</option>
-                </select>
-              </div>
             </div>
 
             {/* Description */}
@@ -444,11 +577,11 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
                       onClick={() => handleRemoveContact(index)}
                       className="px-2 py-1 text-red-500 hover:text-red-700"
                     >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
                 )
               })}
               <div className="relative">
