@@ -1,6 +1,6 @@
 "use client"
 
-import { memo, useState, useCallback, useMemo } from "react"
+import { memo, useState, useCallback, useMemo, useRef } from "react"
 import { RestaurantCard } from "@/components/card"
 import { FilterSystem, type CuisineOption, type MealOption, type AtmosphereOption } from "@/components/search/FilterSystem"
 import { SortButton, type SortOptionId } from "@/components/search/SortSystem"
@@ -15,6 +15,26 @@ type AdminSortOptionId =
   | "name-asc"
   | "name-desc"
 
+interface ContactInfo {
+  type: string
+  value: string
+}
+
+const CONTACT_OPTIONS = [
+  { id: "phone", label: "Phone", icon: "📞", placeholder: "+971 50 123 4567" },
+  { id: "website", label: "Website", icon: "🌐", placeholder: "https://restaurant.com" },
+  { id: "instagram", label: "Instagram", icon: "📸", placeholder: "@restaurant" },
+  { id: "facebook", label: "Facebook", icon: "👥", placeholder: "facebook.com/restaurant" },
+  { id: "twitter", label: "X (Twitter)", icon: "𝕏", placeholder: "@restaurant" },
+  { id: "tiktok", label: "TikTok", icon: "🎵", placeholder: "@restaurant" },
+  { id: "talabat", label: "Talabat", icon: "🍔", placeholder: "Order link" },
+  { id: "noon", label: "Noon Food", icon: "🛒", placeholder: "Order link" },
+  { id: "deliveroo", label: "Deliveroo", icon: "🚴", placeholder: "Order link" },
+  { id: "careem", label: "Careem NOW", icon: "🚗", placeholder: "Order link" },
+  { id: "ubereats", label: "Uber Eats", icon: "🍕", placeholder: "Order link" },
+  { id: "zomato", label: "Zomato", icon: "🍽️", placeholder: "Order link" },
+]
+
 interface AdminClientProps {
   initialRestaurants: ShadiRestaurant[]
 }
@@ -22,14 +42,21 @@ interface AdminClientProps {
 export const AdminClient = memo(function AdminClient({ initialRestaurants }: AdminClientProps) {
   const [data, setData] = useState(initialRestaurants)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [showContactMenu, setShowContactMenu] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [newRestaurant, setNewRestaurant] = useState({
     name: "",
     cuisine: "",
     price: "$" as const,
     description: "",
-    image: "",
+    images: [] as string[],
+    mainImageIndex: 0,
     district: "",
     emirate: "",
+    address: "",
+    meals: [] as string[],
+    atmosphere: [] as string[],
+    contacts: [] as ContactInfo[],
   })
 
   // Filters
@@ -46,7 +73,63 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
 
   const handleEdit = useCallback((id: string) => {
     alert(`Edit restaurant with ID: ${id}`)
-    // Implement modal or redirect
+  }, [])
+
+  const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) return
+
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setNewRestaurant((prev) => ({
+          ...prev,
+          images: [...prev.images, reader.result as string],
+        }))
+      }
+      reader.readAsDataURL(file)
+    })
+  }, [])
+
+  const handleRemoveImage = useCallback((index: number) => {
+    setNewRestaurant((prev) => {
+      const newImages = prev.images.filter((_, i) => i !== index)
+      const newMainIndex = prev.mainImageIndex >= index ? Math.max(0, prev.mainImageIndex - 1) : prev.mainImageIndex
+      return {
+        ...prev,
+        images: newImages,
+        mainImageIndex: newMainIndex,
+      }
+    })
+  }, [])
+
+  const handleSetMainImage = useCallback((index: number) => {
+    setNewRestaurant((prev) => ({ ...prev, mainImageIndex: index }))
+  }, [])
+
+  const handleAddContact = useCallback((contactType: string) => {
+    const contact = CONTACT_OPTIONS.find((c) => c.id === contactType)
+    if (!contact) return
+
+    setNewRestaurant((prev) => ({
+      ...prev,
+      contacts: [...prev.contacts, { type: contactType, value: "" }],
+    }))
+    setShowContactMenu(false)
+  }, [])
+
+  const handleRemoveContact = useCallback((index: number) => {
+    setNewRestaurant((prev) => ({
+      ...prev,
+      contacts: prev.contacts.filter((_, i) => i !== index),
+    }))
+  }, [])
+
+  const handleContactChange = useCallback((index: number, value: string) => {
+    setNewRestaurant((prev) => ({
+      ...prev,
+      contacts: prev.contacts.map((c, i) => (i === index ? { ...c, value } : c)),
+    }))
   }, [])
 
   const handleAddRestaurant = useCallback(() => {
@@ -55,6 +138,8 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
       return
     }
 
+    const mainImage = newRestaurant.images[newRestaurant.mainImageIndex] || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800"
+
     const restaurant: ShadiRestaurant = {
       id: `rest-${Date.now()}`,
       slug: newRestaurant.name.toLowerCase().replace(/\s+/g, "-"),
@@ -62,10 +147,10 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
       cuisine: newRestaurant.cuisine,
       price: newRestaurant.price,
       description: newRestaurant.description,
-      image: newRestaurant.image || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800",
-      images: [newRestaurant.image || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800"],
-      meals: ["Breakfast", "Lunch", "Dinner"],
-      atmosphere: ["Casual"],
+      image: mainImage,
+      images: newRestaurant.images.length > 0 ? newRestaurant.images : [mainImage],
+      meals: newRestaurant.meals.length > 0 ? newRestaurant.meals : ["Breakfast", "Lunch", "Dinner"],
+      atmosphere: newRestaurant.atmosphere.length > 0 ? newRestaurant.atmosphere : ["Casual"],
       district: newRestaurant.district,
       emirate: (newRestaurant.emirate || "Dubai") as any,
       addedDate: new Date().toISOString(),
@@ -77,9 +162,14 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
       cuisine: "",
       price: "$",
       description: "",
-      image: "",
+      images: [],
+      mainImageIndex: 0,
       district: "",
       emirate: "",
+      address: "",
+      meals: [],
+      atmosphere: [],
+      contacts: [],
     })
     setIsAddModalOpen(false)
   }, [newRestaurant])
@@ -88,22 +178,18 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
   const filteredData = useMemo(() => {
     let results = [...data]
 
-    // Filter by meal
     if (meal !== "all") {
       results = results.filter((r) => r.meals?.includes(meal))
     }
 
-    // Filter by cuisine
     if (cuisine !== "all") {
       results = results.filter((r) => r.cuisine?.toLowerCase() === cuisine.toLowerCase())
     }
 
-    // Filter by atmosphere
     if (atmosphere !== "all") {
       results = results.filter((r) => r.atmosphere?.includes(atmosphere))
     }
 
-    // Sort
     switch (sort) {
       case "price-desc":
         results.sort((a, b) => priceTierValue(b.price) - priceTierValue(a.price))
@@ -180,7 +266,6 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
                 href={`/restaurants/${restaurant.slug}`}
               />
 
-              {/* Action buttons */}
               <div className="absolute top-[var(--spacing-sm)] right-[var(--spacing-sm)] flex flex-col gap-[var(--spacing-xs)] opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={() => handleEdit(restaurant.id)}
@@ -203,79 +288,85 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
       {/* Add Restaurant Modal */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl p-6 min-w-[300px] w-[600px] max-w-[95vw] max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">Add New Restaurant</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Name *</label>
-                <input
-                  type="text"
-                  value={newRestaurant.name}
-                  onChange={(e) => setNewRestaurant({ ...newRestaurant, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-[var(--fg-20)] rounded-lg"
-                  placeholder="Restaurant name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Cuisine *</label>
-                <input
-                  type="text"
-                  value={newRestaurant.cuisine}
-                  onChange={(e) => setNewRestaurant({ ...newRestaurant, cuisine: e.target.value })}
-                  className="w-full px-3 py-2 border border-[var(--fg-20)] rounded-lg"
-                  placeholder="e.g., Italian, Japanese"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Price Tier</label>
-                <select
-                  value={newRestaurant.price}
-                  onChange={(e) => setNewRestaurant({ ...newRestaurant, price: e.target.value as any })}
-                  className="w-full px-3 py-2 border border-[var(--fg-20)] rounded-lg"
+          <div className="bg-[var(--card-bg)] rounded-[var(--radius-xl)] p-6 w-[700px] max-w-[95vw] max-h-[90vh] overflow-y-auto">
+
+            {/* Image Upload Section */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2 text-[var(--fg)]">Restaurant Images</label>
+              <div className="flex gap-3 overflow-x-auto pb-2">
+                {newRestaurant.images.map((img, index) => (
+                  <div
+                    key={index}
+                    className={`relative flex-shrink-0 w-32 h-32 rounded-lg overflow-hidden border-2 cursor-pointer ${
+                      index === newRestaurant.mainImageIndex ? "border-[var(--color-primary)]" : "border-transparent"
+                    }`}
+                    onClick={() => handleSetMainImage(index)}
+                  >
+                    <img src={img} alt={`Upload ${index + 1}`} className="w-full h-full object-cover" />
+                    {index === newRestaurant.mainImageIndex && (
+                      <div className="absolute bottom-1 left-1/2 -translate-x-1/2 bg-[var(--color-primary)] text-white text-xs px-2 py-0.5 rounded-full">
+                        Main
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); handleRemoveImage(index) }}
+                      className="absolute top-1 right-1 bg-red-500 text-white w-5 h-5 rounded-full text-xs hover:bg-red-600"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex-shrink-0 w-32 h-32 rounded-lg border-2 border-dashed border-[var(--fg-20)] flex flex-col items-center justify-center text-[var(--fg-50)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
                 >
-                  <option value="$">$ - Budget-friendly</option>
-                  <option value="$$">$$ - Moderate</option>
-                  <option value="$$$">$$$ - Expensive</option>
-                  <option value="$$$$">$$$$ - Very Expensive</option>
-                </select>
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span className="text-xs mt-1">Add Photo</span>
+                </button>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Image URL</label>
-                <input
-                  type="url"
-                  value={newRestaurant.image}
-                  onChange={(e) => setNewRestaurant({ ...newRestaurant, image: e.target.value })}
-                  className="w-full px-3 py-2 border border-[var(--fg-20)] rounded-lg"
-                  placeholder="https://example.com/image.jpg"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-1">Description</label>
-                <textarea
-                  value={newRestaurant.description}
-                  onChange={(e) => setNewRestaurant({ ...newRestaurant, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-[var(--fg-20)] rounded-lg"
-                  rows={3}
-                  placeholder="Restaurant description"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">District</label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+            </div>
+
+            {/* Restaurant Name */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1 text-[var(--fg)]">Restaurant Name *</label>
+              <input
+                type="text"
+                value={newRestaurant.name}
+                onChange={(e) => setNewRestaurant({ ...newRestaurant, name: e.target.value })}
+                className="w-full px-3 py-2 border border-[var(--fg-20)] rounded-lg bg-[var(--color-white)] text-[var(--fg)]"
+                placeholder="Restaurant name"
+              />
+            </div>
+
+            {/* Location */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1 text-[var(--fg)]">Location</label>
+              <div className="grid grid-cols-2 gap-3">
                 <input
                   type="text"
                   value={newRestaurant.district}
                   onChange={(e) => setNewRestaurant({ ...newRestaurant, district: e.target.value })}
-                  className="w-full px-3 py-2 border border-[var(--fg-20)] rounded-lg"
-                  placeholder="e.g., Downtown, Marina"
+                  className="px-3 py-2 border border-[var(--fg-20)] rounded-lg bg-[var(--color-white)] text-[var(--fg)]"
+                  placeholder="District"
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Emirate</label>
                 <select
                   value={newRestaurant.emirate}
                   onChange={(e) => setNewRestaurant({ ...newRestaurant, emirate: e.target.value })}
-                  className="w-full px-3 py-2 border border-[var(--fg-20)] rounded-lg"
+                  className="px-3 py-2 border border-[var(--fg-20)] rounded-lg bg-[var(--color-white)] text-[var(--fg)]"
                 >
+                  <option value="">Select Emirate</option>
                   <option value="Dubai">Dubai</option>
                   <option value="Abu Dhabi">Abu Dhabi</option>
                   <option value="Sharjah">Sharjah</option>
@@ -285,7 +376,111 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
                   <option value="Fujairah">Fujairah</option>
                 </select>
               </div>
+              <input
+                type="text"
+                value={newRestaurant.address}
+                onChange={(e) => setNewRestaurant({ ...newRestaurant, address: e.target.value })}
+                className="w-full mt-2 px-3 py-2 border border-[var(--fg-20)] rounded-lg bg-[var(--color-white)] text-[var(--fg)]"
+                placeholder="Full address"
+              />
             </div>
+
+            {/* Cuisine & Price */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div>
+                <label className="block text-sm font-medium mb-1 text-[var(--fg)]">Cuisine *</label>
+                <input
+                  type="text"
+                  value={newRestaurant.cuisine}
+                  onChange={(e) => setNewRestaurant({ ...newRestaurant, cuisine: e.target.value })}
+                  className="w-full px-3 py-2 border border-[var(--fg-20)] rounded-lg bg-[var(--color-white)] text-[var(--fg)]"
+                  placeholder="e.g., Italian, Japanese"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 text-[var(--fg)]">Price Tier</label>
+                <select
+                  value={newRestaurant.price}
+                  onChange={(e) => setNewRestaurant({ ...newRestaurant, price: e.target.value as any })}
+                  className="w-full px-3 py-2 border border-[var(--fg-20)] rounded-lg bg-[var(--color-white)] text-[var(--fg)]"
+                >
+                  <option value="$">$ - Budget-friendly</option>
+                  <option value="$$">$$ - Moderate</option>
+                  <option value="$$$">$$$ - Expensive</option>
+                  <option value="$$$$">$$$$ - Very Expensive</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1 text-[var(--fg)]">Description</label>
+              <textarea
+                value={newRestaurant.description}
+                onChange={(e) => setNewRestaurant({ ...newRestaurant, description: e.target.value })}
+                className="w-full px-3 py-2 border border-[var(--fg-20)] rounded-lg bg-[var(--color-white)] text-[var(--fg)]"
+                rows={3}
+                placeholder="Restaurant description"
+              />
+            </div>
+
+            {/* Contacts Section */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2 text-[var(--fg)]">Contact & Social</label>
+              {newRestaurant.contacts.map((contact, index) => {
+                const contactOption = CONTACT_OPTIONS.find((c) => c.id === contact.type)
+                return (
+                  <div key={index} className="flex gap-2 mb-2">
+                    <span className="text-lg">{contactOption?.icon}</span>
+                    <input
+                      type="text"
+                      value={contact.value}
+                      onChange={(e) => handleContactChange(index, e.target.value)}
+                      className="flex-1 px-3 py-2 border border-[var(--fg-20)] rounded-lg bg-[var(--color-white)] text-[var(--fg)]"
+                      placeholder={contactOption?.placeholder}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveContact(index)}
+                      className="px-2 py-1 text-red-500 hover:text-red-700"
+                    >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+                )
+              })}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowContactMenu(!showContactMenu)}
+                  className="w-full px-3 py-2 border border-dashed border-[var(--fg-20)] rounded-lg text-[var(--fg-70)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add Contact
+                </button>
+                {showContactMenu && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-[var(--color-white)] border border-[var(--fg-10)] rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                    {CONTACT_OPTIONS.map((option) => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => handleAddContact(option.id)}
+                        className="w-full px-3 py-2 text-left hover:bg-[var(--fg-5)] flex items-center gap-2 text-[var(--fg)]"
+                      >
+                        <span>{option.icon}</span>
+                        <span>{option.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Actions */}
             <div className="flex gap-3 mt-6">
               <button
                 onClick={handleAddRestaurant}
