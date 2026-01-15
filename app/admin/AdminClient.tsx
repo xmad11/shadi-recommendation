@@ -202,10 +202,10 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
 
       {/* Add Restaurant Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4">Add New Restaurant</h2>
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Name *</label>
                 <input
@@ -240,16 +240,6 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Description</label>
-                <textarea
-                  value={newRestaurant.description}
-                  onChange={(e) => setNewRestaurant({ ...newRestaurant, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-[var(--fg-20)] rounded-lg"
-                  rows={3}
-                  placeholder="Restaurant description"
-                />
-              </div>
-              <div>
                 <label className="block text-sm font-medium mb-1">Image URL</label>
                 <input
                   type="url"
@@ -257,6 +247,16 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
                   onChange={(e) => setNewRestaurant({ ...newRestaurant, image: e.target.value })}
                   className="w-full px-3 py-2 border border-[var(--fg-20)] rounded-lg"
                   placeholder="https://example.com/image.jpg"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-1">Description</label>
+                <textarea
+                  value={newRestaurant.description}
+                  onChange={(e) => setNewRestaurant({ ...newRestaurant, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-[var(--fg-20)] rounded-lg"
+                  rows={3}
+                  placeholder="Restaurant description"
                 />
               </div>
               <div>
