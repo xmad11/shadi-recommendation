@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "// LOCAL DEVELOPMENT": "Fast, no audit overhead",
-    "dev": "bun next dev",
+    "dev": "bun next dev -H 0.0.0.0",
     "dev:clean": "rm -rf .next && bun run dev",
     "// BUILDING": "Separated audit from build",
     "build": "bun next build",
