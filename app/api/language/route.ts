@@ -3,9 +3,7 @@
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 import { NextRequest, NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import type { Language } from "@/lib/language"
-import { LANGUAGE_COOKIE, getToggleLanguage } from "@/lib/language"
+import { setLanguage, getToggleLanguage, type Language } from "@/lib/language.server"
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,15 +14,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid language" }, { status: 400 })
     }
 
-    const cookieStore = await cookies()
     const newLanguage = getToggleLanguage(currentLanguage)
-
-    cookieStore.set(LANGUAGE_COOKIE, newLanguage, {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 365, // 1 year
-    })
+    await setLanguage(newLanguage)
 
     return NextResponse.json({ language: newLanguage })
   } catch (error) {

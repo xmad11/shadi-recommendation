@@ -5,8 +5,12 @@
 "use client"
 
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react"
-import type { Language } from "@/lib/language"
-import { DEFAULT_LANGUAGE, getLanguageButtonLabel, getToggleLanguage } from "@/lib/language"
+import {
+  DEFAULT_LANGUAGE,
+  getLanguageButtonLabel,
+  getToggleLanguage,
+  type Language,
+} from "@/lib/language.types"
 
 interface LanguageContextValue {
   language: Language
