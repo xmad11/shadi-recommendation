@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   RESTAURANT TYPES - Simplified
+   RESTAURANT TYPES - AED Price System
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 /**
@@ -15,9 +15,58 @@ export type UAEEmirate =
   | "Fujairah"
 
 /**
- * Price tier levels
+ * AED Price Buckets - Numeric ranges only
  */
-export type PriceTier = "$" | "$$" | "$$$" | "$$$$"
+export type PriceBucketId = 1 | 2 | 3 | 4 | 5 | 6 | 7
+
+/**
+ * Price bucket definition with AED ranges
+ */
+export interface PriceBucket {
+  id: PriceBucketId
+  minPrice: number
+  maxPrice: number | null // null = open-ended (luxury)
+  labelEn: string
+  labelAr: string
+}
+
+/**
+ * All price buckets
+ */
+export const PRICE_BUCKETS: readonly PriceBucket[] = [
+  { id: 1, minPrice: 0, maxPrice: 10, labelEn: "Under 10 AED", labelAr: "أقل من 10 دراهم" },
+  { id: 2, minPrice: 10, maxPrice: 30, labelEn: "10–30 AED", labelAr: "10–30 درهم" },
+  { id: 3, minPrice: 30, maxPrice: 50, labelEn: "30–50 AED", labelAr: "30–50 درهم" },
+  { id: 4, minPrice: 50, maxPrice: 100, labelEn: "50–100 AED", labelAr: "50–100 درهم" },
+  { id: 5, minPrice: 100, maxPrice: 200, labelEn: "100–200 AED", labelAr: "100–200 درهم" },
+  { id: 6, minPrice: 200, maxPrice: 400, labelEn: "200–400 AED", labelAr: "200–400 درهم" },
+  { id: 7, minPrice: 500, maxPrice: null, labelEn: "Above 500 AED", labelAr: "أكثر من 500 درهم" },
+] as const
+
+/**
+ * Get price bucket label (always AED)
+ */
+export function getPriceLabel(
+  bucketId: PriceBucketId,
+  locale: "en" | "ar" = "ar"
+): string {
+  const bucket = PRICE_BUCKETS.find((b) => b.id === bucketId)
+  if (!bucket) return ""
+  return locale === "ar" ? bucket.labelAr : bucket.labelEn
+}
+
+/**
+ * Get price bucket by min/max price values
+ */
+export function getPriceBucket(minPrice: number, maxPrice: number | null): PriceBucket {
+  return (
+    PRICE_BUCKETS.find(
+      (bucket) =>
+        bucket.minPrice === minPrice &&
+        (bucket.maxPrice === maxPrice || (bucket.maxPrice === null && maxPrice === null))
+    ) || PRICE_BUCKETS[0]
+  )
+}
 
 /**
  * Cuisine types
@@ -39,7 +88,17 @@ export type CuisineType =
   | "Seafood"
   | "Grill"
   | "International"
-  | string
+  | "emirati"
+  | "arabic"
+  | "lebanese"
+  | "indian"
+  | "pakistani"
+  | "chinese"
+  | "japanese"
+  | "thai"
+  | "italian"
+  | "seafood"
+  | "international"
 
 /**
  * Meal types
@@ -57,7 +116,6 @@ export type AtmosphereType =
   | "Family Friendly"
   | "Live Music"
   | "View"
-  | string
 
 /**
  * Map coordinates
@@ -68,7 +126,7 @@ export interface MapCoordinates {
 }
 
 /**
- * Restaurant Data - Simplified
+ * Restaurant Data - With AED pricing
  */
 export interface ShadiRestaurant {
   // Identity
@@ -80,8 +138,10 @@ export interface ShadiRestaurant {
   image: string
   images: string[]
 
-  // Price
-  price: PriceTier
+  // Price - AED system
+  priceBucketId: PriceBucketId
+  minPrice: number
+  maxPrice: number | null
 
   // Cuisine/Category
   cuisine: CuisineType
@@ -121,21 +181,8 @@ export interface RestaurantCardProps extends ShadiRestaurant {
 }
 
 /**
- * Format price for display
+ * Get price bucket ID for sorting
  */
-export function formatPrice(price: PriceTier): string {
-  const labels: Record<PriceTier, string> = {
-    $: "Budget-friendly",
-    $$: "Moderate",
-    $$$: "Expensive",
-    $$$$: "Very Expensive",
-  }
-  return labels[price] || price
-}
-
-/**
- * Get price tier as number for sorting
- */
-export function priceTierValue(price: PriceTier): number {
-  return { $: 1, $$: 2, $$$: 3, $$$$: 4 }[price] || 0
+export function priceBucketValue(bucketId: PriceBucketId): number {
+  return bucketId
 }

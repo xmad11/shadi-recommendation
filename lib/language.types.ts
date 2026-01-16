@@ -8,10 +8,6 @@ export function getToggleLanguage(lang: Language): Language {
   return lang === "ar" ? "en" : "ar"
 }
 
-export function getLanguageDirection(lang: Language): "rtl" | "ltr" {
-  return lang === "ar" ? "rtl" : "ltr"
-}
-
 export function getLanguageButtonLabel(lang: Language): string {
   return lang === "ar" ? "E" : "ع"
 }

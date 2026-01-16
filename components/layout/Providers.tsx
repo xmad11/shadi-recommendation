@@ -2,7 +2,7 @@
 
 import { NavigationProvider } from "@/components/navigation/NavigationProvider"
 import { LanguageProvider } from "@/context/LanguageProvider"
-import type { Language } from "@/lib/language"
+import type { Language } from "@/lib/language.types"
 
 interface ProvidersProps {
   children: React.ReactNode

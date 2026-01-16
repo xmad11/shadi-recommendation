@@ -4,79 +4,35 @@
 
 "use client"
 
-import { MapPinIcon } from "@/components/icons"
+import { MapPin } from "lucide-react"
 import { useNavigation } from "@/components/navigation/NavigationProvider"
+import { getPriceLabel } from "@/types/restaurant"
 import type { ShadiRestaurant } from "@/types/restaurant"
-import { useCallback, useEffect, useState } from "react"
+import { CardCarousel } from "@/components/carousel"
+import { memo, useCallback, useEffect } from "react"
+import { useLanguage } from "@/context/LanguageProvider"
 
 interface RestaurantDetailClientProps {
   restaurant: ShadiRestaurant
 }
 
-export default function RestaurantDetailClient({ restaurant }: RestaurantDetailClientProps) {
-  const navContext = useNavigation()
-  const [activeImageIndex, setActiveImageIndex] = useState(0)
+function RestaurantDetailClient({ restaurant }: RestaurantDetailClientProps) {
+  const { language } = useLanguage()
+  const { showBackButtonInHeader, hideBackButton } = useNavigation()
 
   useEffect(() => {
-    navContext.showBackButtonInHeader()
+    showBackButtonInHeader()
     return () => {
-      navContext.hideBackButton()
+      hideBackButton()
     }
-  }, [navContext])
-
-  const nextImage = useCallback(() => {
-    setActiveImageIndex((prev) => (prev + 1) % restaurant.images.length)
-  }, [restaurant.images.length])
-
-  const prevImage = useCallback(() => {
-    setActiveImageIndex((prev) => (prev - 1 + restaurant.images.length) % restaurant.images.length)
-  }, [restaurant.images.length])
+  }, [showBackButtonInHeader, hideBackButton])
 
   return (
     <div className="min-h-screen w-full">
       <main className="w-full">
         {/* Hero Image Carousel */}
         <div className="relative w-full aspect-[16/9] md:aspect-[21/9] bg-[var(--fg-5)] mx-auto px-[var(--page-padding-x)] max-w-[var(--page-max-width)] mt-[var(--spacing-md)] rounded-[var(--radius-xl)] overflow-hidden">
-          <img
-            src={restaurant.images[activeImageIndex]}
-            alt={restaurant.name}
-            className="w-full h-full object-cover"
-          />
-
-          {restaurant.images.length > 1 && (
-            <>
-              <button
-                type="button"
-                onClick={prevImage}
-                className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/60 hover:bg-white/80 backdrop-blur-sm transition-all"
-                aria-label="Previous image"
-              >
-                ←
-              </button>
-              <button
-                type="button"
-                onClick={nextImage}
-                className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/60 hover:bg-white/80 backdrop-blur-sm transition-all"
-                aria-label="Next image"
-              >
-                →
-              </button>
-
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
-                {restaurant.images.map((_, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    onClick={() => setActiveImageIndex(index)}
-                    className={`h-1 rounded-full transition-all ${
-                      index === activeImageIndex ? "bg-[var(--fg)] w-6" : "bg-white/70 w-1.5 hover:bg-white/90"
-                    }`}
-                    aria-label={`Go to image ${index + 1}`}
-                  />
-                ))}
-              </div>
-            </>
-          )}
+          <CardCarousel images={restaurant.images} alt={restaurant.name} height="100%" className="h-full" restaurantName={restaurant.name} showIndicators={true} />
         </div>
 
         {/* Restaurant Info - Full width, left-aligned text */}
@@ -88,11 +44,11 @@ export default function RestaurantDetailClient({ restaurant }: RestaurantDetailC
           <div className="flex flex-wrap items-center gap-4 text-sm text-[var(--fg-50)] mb-4">
             {(restaurant.district || restaurant.emirate) && (
               <div className="flex items-center gap-1.5">
-                <MapPinIcon className="w-4 h-4 text-[var(--color-primary)]" />
+                <MapPin className="w-4 h-4 text-[var(--color-primary)]" strokeWidth={1.5} />
                 <span>{[restaurant.district, restaurant.emirate].filter(Boolean).join(", ")}</span>
               </div>
             )}
-            {restaurant.price && <span>{restaurant.price}</span>}
+            {restaurant.priceBucketId && <span>{getPriceLabel(restaurant.priceBucketId, language)}</span>}
             {restaurant.cuisine && <span>{restaurant.cuisine}</span>}
           </div>
 
@@ -162,3 +118,5 @@ export default function RestaurantDetailClient({ restaurant }: RestaurantDetailC
     </div>
   )
 }
+
+export default memo(RestaurantDetailClient)

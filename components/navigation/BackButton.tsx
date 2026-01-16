@@ -7,7 +7,7 @@
 
 "use client"
 
-import { ChevronLeft } from "@/components/icons"
+import { ChevronLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { type ButtonHTMLAttributes, forwardRef } from "react"
@@ -25,11 +25,10 @@ export const BackButton = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTM
           "p-[var(--spacing-xs)]",
           "rounded-full",
           "bg-[var(--bg)]",
-          "shadow-lg",
+          "shadow-[var(--shadow-lg)]",
           "border border-[var(--fg-10)]",
-          // Phase 3 Fix: Force text color for visibility
-          "text-gray-900",
-          "hover:text-gray-700",
+          "text-[var(--fg)]",
+          "hover:text-[var(--fg)]/80",
           "hover:bg-[var(--fg-5)]",
           "transition-all",
           className

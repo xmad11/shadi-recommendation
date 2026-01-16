@@ -1,0 +1,1656 @@
+Complete Security Implementation Plan for Agent
+
+Here's a comprehensive, step-by-step implementation guide for your technical agent. Each section includes exact code, commands, and verification steps.
+
+---
+
+PART 1: ONE-PAGE ENTERPRISE SECURITY CHECKLIST
+
+Implementation Files:
+
+File 1: /security/CHECKLIST.md
+
+```markdown
+# Enterprise Security Implementation Checklist
+**Application:** [APP_NAME] | **Stack:** Next.js 16.1 + React 19.2 + Supabase
+**Created:** [DATE] | **Quarterly Review:** [NEXT_QUARTER_DATE]
+
+## 📋 Stage 1 — Foundational Security (CRITICAL PATH)
+
+### ✅ Framework & Deployment
+- [ ] Next.js updated to latest security-patched version (≥16.1.4)
+- [ ] React updated to latest security-patched version (≥19.2.0)
+- [ ] All dependencies updated (`npm audit` passes)
+- [ ] Deployment uses HTTPS-only configuration
+- [ ] Production build excludes development packages
+
+**Verification:** `npx next --version` && `npm audit --audit-level=high`
+
+### ✅ Secure HTTP & Headers
+- [ ] CSP middleware deployed in production
+- [ ] Security headers configured (HSTS, X-Frame-Options, etc.)
+- [ ] `dangerouslySetInnerHTML` eliminated from codebase
+- [ ] All forms have CSRF protection
+
+**Verification:** Run `curl -I https://yourapp.com` and check headers
+
+### ✅ Environment Variables
+- [ ] Zero sensitive values in `NEXT_PUBLIC_*` variables
+- [ ] Production secrets in Vercel/Supabase project settings
+- [ ] Development secrets in `.env.local` (git-ignored)
+- [ ] Test secrets separate from production
+
+**Verification:** `grep -r "NEXT_PUBLIC_" src/` shows only safe values
+
+### ✅ Input Validation
+- [ ] Zod schemas created for all API routes
+- [ ] Server Actions validate input with Zod
+- [ ] File uploads validated for type/size
+- [ ] SQL injection protection via parameterized queries
+
+**Verification:** Search for `any` type in TypeScript files → 0 results
+
+### ✅ Database Access Control
+- [ ] Supabase RLS enabled on ALL tables
+- [ ] Service role key never exposed to client
+- [ ] Each table has explicit policies
+- [ ] Policies tested with multiple user roles
+
+**Verification:** `RLS` column shows `ENABLED` in Supabase table editor
+
+## 🛡️ Stage 2 — Robust Security
+
+### ✅ Authorization & Access Control
+- [ ] Centralized Data Access Layer (DAL) implemented
+- [ ] All database queries go through DAL
+- [ ] User permissions cached server-side
+- [ ] Role-based access control (RBAC) implemented
+
+**Verification:** No direct `supabase.from()` calls in components
+
+### ✅ Secure Session Management
+- [ ] Cookies: `HttpOnly`, `Secure`, `SameSite=Strict`
+- [ ] Session timeout: 24 hours max
+- [ ] JWT refresh mechanism implemented
+- [ ] Logout clears all session tokens
+
+**Verification:** Chrome DevTools → Application → Cookies → check flags
+
+### ✅ Supply Chain Security
+- [ ] GitHub Dependabot alerts enabled
+- [ ] Dependabot auto-merge for patch versions
+- [ ] Weekly dependency review scheduled
+- [ ] All dependencies have known licenses
+
+**Verification:** GitHub → Security → Dependabot → Alerts (0 open)
+
+### ✅ CI/CD Security
+- [ ] SAST scans in GitHub Actions
+- [ ] DAST scans for staging environment
+- [ ] Secrets scanning in CI
+- [ ] Branch protection with required checks
+
+**Verification:** GitHub Actions → All security workflows pass
+
+## 🚀 Stage 3 — Enterprise Security
+
+### ✅ Zero Trust Implementation
+- [ ] Every API route validates session
+- [ ] Server Components re-validate permissions
+- [ ] Rate limiting per user/IP
+- [ ] Suspicious activity logging
+
+**Verification:** Attempt API call with invalid token → 401 response
+
+### ✅ Compliance & Audit
+- [ ] Audit logs for all data modifications
+- [ ] User action logging (login, permissions changes)
+- [ ] Log retention: 90 days minimum
+- [ ] GDPR data export capability
+
+**Verification:** `audit_logs` table exists with proper triggers
+
+### ✅ Software Bill of Materials
+- [ ] SBOM generated per deployment
+- [ ] SBOM stored with deployment artifacts
+- [ ] Vulnerability scanning against SBOM
+- [ ] SBOM diff on dependency updates
+
+**Verification:** `sbom.json` exists in latest deployment
+
+### ✅ Advanced Monitoring
+- [ ] Centralized error logging (Sentry/LogRocket)
+- [ ] Security telemetry dashboard
+- [ ] Real-time alerting for suspicious patterns
+- [ ] Monthly security report automation
+
+**Verification:** Security dashboard accessible with last 7 days data
+
+## 🔍 Quarterly Review Process
+
+### Review Date: [DATE]
+**Conducted by:** [NAME]
+**Attendees:** [TEAM]
+
+### Review Items:
+1. **Open Security Issues:** [LIST]
+2. **Dependency Updates Needed:** [LIST]
+3. **Incident Response:** [REPORT]
+4. **Compliance Status:** [STATUS]
+5. **Next Quarter Priorities:** [LIST]
+
+### Action Items:
+- [ ] Item 1 (Owner: [NAME], Due: [DATE])
+- [ ] Item 2 (Owner: [NAME], Due: [DATE])
+- [ ] Item 3 (Owner: [NAME], Due: [DATE])
+
+---
+
+## 📊 Security Metrics Dashboard
+
+| Metric | Target | Current | Status |
+|--------|---------|---------|--------|
+| Open Vulnerabilities | 0 | [COUNT] | ⚠️ |
+| Security Tests Passing | 100% | [PERCENT] | ✅ |
+| Dependency Updates | <7 days | [DAYS] | ⚠️ |
+| Security Incidents | 0 | [COUNT] | ✅ |
+| Compliance Coverage | 100% | [PERCENT] | ✅ |
+
+**Last Updated:** [DATE]
+```
+
+File 2: /security/IMPLEMENTATION_GUIDE.md
+
+```markdown
+# Implementation Sequence for Agent
+
+## Week 1: Foundation (Critical)
+1. Update Next.js/React to latest security patches
+2. Implement CSP middleware (Part 2)
+3. Enable Supabase RLS on all tables
+4. Create Zod validation schemas
+
+## Week 2: Core Security
+1. Implement centralized DAL
+2. Configure secure cookies
+3. Enable Dependabot
+4. Set up basic CI/CD security scans
+
+## Week 3: Enterprise Features
+1. Implement audit logging
+2. Set up SBOM generation
+3. Configure security monitoring
+4. Create zero-trust middleware
+
+## Week 4: Testing & Validation
+1. Penetration testing
+2. Security audit
+3. Compliance verification
+4. Team training
+
+## Daily Agent Tasks:
+1. Check Dependabot alerts
+2. Review security logs
+3. Verify deployment security headers
+4. Monitor for new CVEs
+```
+
+---
+
+PART 2: COPY-PASTE MIDDLEWARE (CSP + HEADERS)
+
+Implementation Files:
+
+File 1: /middleware.ts (root level)
+
+```typescript
+import { NextResponse, type NextRequest } from 'next/server'
+import type { NextMiddleware } from 'next/server'
+
+// Rate limiting configuration
+const RATE_LIMIT_WINDOW = 60 // seconds
+const RATE_LIMIT_MAX_REQUESTS = 100
+
+// Store for rate limiting (use Redis in production)
+const ipRequestCounts = new Map<string, { count: number; resetTime: number }>()
+
+export const middleware: NextMiddleware = async (request: NextRequest) => {
+  const response = NextResponse.next()
+  const { pathname } = request.nextUrl
+  const ip = request.ip || 'unknown'
+  
+  // 1. Apply rate limiting to API routes
+  if (pathname.startsWith('/api/')) {
+    const currentTime = Math.floor(Date.now() / 1000)
+    const ipData = ipRequestCounts.get(ip)
+    
+    if (!ipData || currentTime > ipData.resetTime) {
+      // First request or window expired
+      ipRequestCounts.set(ip, {
+        count: 1,
+        resetTime: currentTime + RATE_LIMIT_WINDOW
+      })
+    } else {
+      // Increment count
+      ipData.count++
+      
+      if (ipData.count > RATE_LIMIT_MAX_REQUESTS) {
+        return new NextResponse('Too Many Requests', {
+          status: 429,
+          headers: {
+            'Retry-After': RATE_LIMIT_WINDOW.toString()
+          }
+        })
+      }
+    }
+  }
+  
+  // 2. Generate nonce for CSP (unique per request)
+  const nonce = Buffer.from(crypto.randomUUID()).toString('base64')
+  
+  // 3. Define CSP directives
+  const cspDirectives = [
+    // Default policy: self-only
+    "default-src 'self'",
+    
+    // Scripts: self + nonce for inline scripts + trusted CDNs
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https: 'unsafe-inline'`,
+    
+    // Styles: self + inline (required for Next.js) + Tailwind if used
+    "style-src 'self' 'unsafe-inline'",
+    
+    // Images: self + data URIs + Supabase storage + trusted domains
+    "img-src 'self' data: https://*.supabase.co https://*.supabase.in",
+    
+    // Fonts: self + Google Fonts if used
+    "font-src 'self' https://fonts.gstatic.com",
+    
+    // Connect: self + Supabase + your APIs
+    "connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co",
+    
+    // Frame ancestors: none (prevent clickjacking)
+    "frame-ancestors 'none'",
+    
+    // Form actions: self only
+    "form-action 'self'",
+    
+    // Base URI: self only
+    "base-uri 'self'",
+    
+    // Object/embed: none (no Flash/Java)
+    "object-src 'none'",
+    "frame-src 'self' https://*.supabase.co",
+    
+    // Upgrade insecure requests
+    "upgrade-insecure-requests",
+    
+    // Block mixed content
+    "block-all-mixed-content",
+  ]
+  
+  // 4. Set security headers
+  const securityHeaders = {
+    // CSP
+    'Content-Security-Policy': cspDirectives.join('; '),
+    
+    // Prevent MIME sniffing
+    'X-Content-Type-Options': 'nosniff',
+    
+    // Clickjacking protection
+    'X-Frame-Options': 'DENY',
+    
+    // XSS protection
+    'X-XSS-Protection': '1; mode=block',
+    
+    // Referrer policy
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    
+    // Permissions policy (formerly Feature-Policy)
+    'Permissions-Policy': [
+      'camera=()',
+      'microphone=()',
+      'geolocation=()',
+      'payment=()',
+      'usb=()'
+    ].join(', '),
+    
+    // HSTS (deploy with care - can't easily revert)
+    // 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+    
+    // Nonce for inline scripts
+    'X-Nonce': nonce,
+  }
+  
+  // 5. Add headers to response
+  Object.entries(securityHeaders).forEach(([key, value]) => {
+    response.headers.set(key, value)
+  })
+  
+  // 6. CSRF protection for POST requests
+  if (request.method === 'POST') {
+    const contentType = request.headers.get('content-type') || ''
+    if (contentType.includes('application/json')) {
+      const origin = request.headers.get('origin')
+      const host = request.headers.get('host')
+      
+      // Only check if origin exists (browser requests)
+      if (origin && !origin.includes(host!)) {
+        return new NextResponse('Invalid origin', { status: 403 })
+      }
+    }
+  }
+  
+  return response
+}
+
+// 7. Configure which paths middleware runs on
+export const config = {
+  matcher: [
+    /*
+     * Match all request paths except:
+     * - _next/static (static files)
+     * - _next/image (image optimization)
+     * - favicon.ico (favicon file)
+     * - public folder files
+     */
+    {
+      source: '/((?!_next/static|_next/image|favicon.ico|public/).*)',
+      missing: [
+        { type: 'header', key: 'next-router-prefetch' },
+        { type: 'header', key: 'purpose', value: 'prefetch' }
+      ]
+    }
+  ]
+}
+```
+
+File 2: /lib/security/rate-limiter.ts (Redis-based for production)
+
+```typescript
+import { Redis } from '@upstash/redis'
+
+// Production rate limiter using Redis
+export class RateLimiter {
+  private redis: Redis
+  private window: number
+  private maxRequests: number
+  
+  constructor(windowSeconds: number, maxRequests: number) {
+    this.redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL!,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+    })
+    this.window = windowSeconds
+    this.maxRequests = maxRequests
+  }
+  
+  async check(identifier: string): Promise<{ allowed: boolean; remaining: number }> {
+    const key = `rate-limit:${identifier}`
+    const current = await this.redis.incr(key)
+    
+    if (current === 1) {
+      // First request, set expiry
+      await this.redis.expire(key, this.window)
+    }
+    
+    const ttl = await this.redis.ttl(key)
+    const remaining = Math.max(0, this.maxRequests - current)
+    
+    return {
+      allowed: current <= this.maxRequests,
+      remaining,
+      // Optional: add reset time
+      reset: Date.now() + (ttl > 0 ? ttl * 1000 : this.window * 1000)
+    }
+  }
+}
+
+// Usage in API routes:
+// const limiter = new RateLimiter(60, 100) // 100 requests per minute
+// const result = await limiter.check(req.ip)
+```
+
+File 3: /app/layout.tsx (Add nonce to scripts)
+
+```typescript
+import { headers } from 'next/headers'
+import Script from 'next/script'
+
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const headersList = await headers()
+  const nonce = headersList.get('x-nonce') || ''
+  
+  return (
+    <html lang="en">
+      <head>
+        {/* Inline scripts must use nonce */}
+        <script
+          nonce={nonce}
+          dangerouslySetInnerHTML={{
+            __html: `window.__NONCE__ = '${nonce}';`,
+          }}
+        />
+        
+        {/* External scripts */}
+        <Script
+          src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+          strategy="afterInteractive"
+          nonce={nonce}
+        />
+      </head>
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+File 4: /scripts/test-headers.js (Verification script)
+
+```javascript
+#!/usr/bin/env node
+
+const https = require('https')
+const { execSync } = require('child_process')
+
+const APP_URL = process.env.APP_URL || 'http://localhost:3000'
+
+async function testSecurityHeaders() {
+  console.log('🔐 Testing security headers...\n')
+  
+  const headers = await getHeaders(APP_URL)
+  
+  const requiredHeaders = {
+    'content-security-policy': 'CSP',
+    'x-content-type-options': 'No MIME sniffing',
+    'x-frame-options': 'Clickjacking protection',
+    'referrer-policy': 'Referrer control',
+    'permissions-policy': 'Feature permissions',
+  }
+  
+  let score = 0
+  const total = Object.keys(requiredHeaders).length
+  
+  for (const [header, description] of Object.entries(requiredHeaders)) {
+    if (headers[header]) {
+      console.log(`✅ ${description}: ${headers[header]}`)
+      score++
+    } else {
+      console.log(`❌ Missing: ${description}`)
+    }
+  }
+  
+  // Test for dangerous headers
+  const dangerous = ['server', 'x-powered-by']
+  dangerous.forEach(header => {
+    if (headers[header]) {
+      console.log(`⚠️  Exposed: ${header} = ${headers[header]}`)
+    }
+  })
+  
+  console.log(`\n📊 Security Header Score: ${score}/${total}`)
+  
+  if (score === total) {
+    console.log('🎉 All security headers are properly configured!')
+  } else {
+    console.log('🔧 Some headers need configuration.')
+    process.exit(1)
+  }
+}
+
+function getHeaders(url) {
+  return new Promise((resolve) => {
+    const req = https.request(url, { method: 'HEAD' }, (res) => {
+      resolve(res.headers)
+    })
+    req.end()
+  })
+}
+
+// Run the test
+testSecurityHeaders().catch(console.error)
+```
+
+Agent Instructions:
+
+1. Copy middleware.ts to root
+2. Run npm install @upstash/redis if using Redis rate limiting
+3. Add nonce support to layout
+4. Deploy and run test script: node scripts/test-headers.js
+5. Verify headers with: curl -I https://yourapp.com
+
+---
+
+PART 3: SUPABASE RLS ATTACKER-SIMULATION TEST PLAN
+
+Test Suite Files:
+
+File 1: /tests/security/rls-attack.test.ts
+
+```typescript
+import { createClient } from '@supabase/supabase-js'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+
+// Test configurations
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY! // NEVER expose this
+
+describe('Supabase RLS Attack Simulation', () => {
+  // Clients for different attack scenarios
+  let adminClient: any // Service role (bypasses RLS)
+  let userAClient: any // Authenticated user A
+  let userBClient: any // Authenticated user B
+  let anonClient: any  // Unauthenticated user
+  
+  beforeAll(async () => {
+    // Initialize clients
+    adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
+    anonClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    
+    // Create test users
+    const { data: userA } = await adminClient.auth.admin.createUser({
+      email: 'attack-test-user-a@test.com',
+      password: 'TestPassword123!',
+      email_confirm: true
+    })
+    
+    const { data: userB } = await adminClient.auth.admin.createUser({
+      email: 'attack-test-user-b@test.com',
+      password: 'TestPassword123!',
+      email_confirm: true
+    })
+    
+    // Sign in as users
+    const { data: sessionA } = await anonClient.auth.signInWithPassword({
+      email: 'attack-test-user-a@test.com',
+      password: 'TestPassword123!'
+    })
+    
+    const { data: sessionB } = await anonClient.auth.signInWithPassword({
+      email: 'attack-test-user-b@test.com',
+      password: 'TestPassword123!'
+    })
+    
+    userAClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: `Bearer ${sessionA.session.access_token}` } }
+    })
+    
+    userBClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: `Bearer ${sessionB.session.access_token}` } }
+    })
+    
+    // Setup test data
+    await adminClient.from('profiles').upsert([
+      { id: userA.user.id, email: userA.user.email, role: 'user' },
+      { id: userB.user.id, email: userB.user.email, role: 'user' }
+    ])
+  })
+  
+  afterAll(async () => {
+    // Cleanup test users
+    const { data: users } = await adminClient.auth.admin.listUsers()
+    const testUsers = users.users.filter(u => 
+      u.email.includes('attack-test-')
+    )
+    
+    for (const user of testUsers) {
+      await adminClient.auth.admin.deleteUser(user.id)
+    }
+  })
+  
+  // TEST 1: Unauthenticated Access Attempt
+  describe('Unauthenticated Access', () => {
+    it('should prevent unauthenticated reads from profiles', async () => {
+      const { data, error } = await anonClient.from('profiles').select('*')
+      expect(error).toBeTruthy()
+      expect(data).toBeNull()
+    })
+    
+    it('should prevent unauthenticated inserts', async () => {
+      const { error } = await anonClient.from('profiles').insert({
+        email: 'hacker@example.com',
+        role: 'admin'
+      })
+      expect(error).toBeTruthy()
+      expect(error?.message).toContain('row-level security')
+    })
+  })
+  
+  // TEST 2: Cross-User Data Access
+  describe('Cross-User Data Access', () => {
+    let userAProfileId: string
+    let userBProfileId: string
+    
+    beforeAll(async () => {
+      // Create private data for each user
+      const { data: dataA } = await userAClient.from('private_notes').insert({
+        title: 'User A Secret',
+        content: 'Confidential data',
+        user_id: userAClient.auth.getUser().then(u => u.user?.id)
+      }).select().single()
+      
+      const { data: dataB } = await userBClient.from('private_notes').insert({
+        title: 'User B Secret',
+        content: 'Confidential data',
+        user_id: userBClient.auth.getUser().then(u => u.user?.id)
+      }).select().single()
+      
+      userAProfileId = dataA.id
+      userBProfileId = dataB.id
+    })
+    
+    it('should prevent User B from reading User A notes', async () => {
+      const { data, error } = await userBClient
+        .from('private_notes')
+        .select('*')
+        .eq('id', userAProfileId)
+      
+      expect(data).toHaveLength(0)
+    })
+    
+    it('should prevent User B from updating User A notes', async () => {
+      const { error } = await userBClient
+        .from('private_notes')
+        .update({ content: 'HACKED' })
+        .eq('id', userAProfileId)
+      
+      expect(error).toBeTruthy()
+    })
+    
+    it('should prevent User B from deleting User A notes', async () => {
+      const { error } = await userBClient
+        .from('private_notes')
+        .delete()
+        .eq('id', userAProfileId)
+      
+      expect(error).toBeTruthy()
+    })
+  })
+  
+  // TEST 3: SQL Injection Attempts
+  describe('SQL Injection Resistance', () => {
+    it('should safely handle malicious WHERE clauses', async () => {
+      const maliciousInput = "1'; DROP TABLE profiles; --"
+      
+      const { data, error } = await userAClient
+        .from('profiles')
+        .select('*')
+        .eq('email', maliciousInput)
+      
+      // Should return empty, not error from SQL injection
+      expect(data).toHaveLength(0)
+      expect(error).toBeNull()
+    })
+    
+    it('should prevent UNION-based attacks', async () => {
+      const unionAttack = "' UNION SELECT * FROM auth.users --"
+      
+      const { data, error } = await userAClient
+        .from('profiles')
+        .select('*')
+        .eq('email', unionAttack)
+      
+      expect(data).toHaveLength(0)
+    })
+  })
+  
+  // TEST 4: Storage Bucket Security
+  describe('Storage Security', () => {
+    it('should enforce bucket policies', async () => {
+      // Try to access another user's file
+      const { data, error } = await userAClient.storage
+        .from('private-uploads')
+        .list('user-b-files')
+      
+      expect(error).toBeTruthy()
+      expect(error?.message).toContain('not authorized')
+    })
+    
+    it('should validate signed URLs', async () => {
+      // Create a signed URL for user A
+      const { data: signedUrl } = await userAClient.storage
+        .from('private-uploads')
+        .createSignedUrl('user-a-files/test.jpg', 60)
+      
+      // Try to access with user B client (different token)
+      const response = await fetch(signedUrl.signedUrl)
+      expect(response.status).toBe(403) // Should be forbidden
+    })
+  })
+  
+  // TEST 5: Real-time Subscription Hijacking
+  describe('Real-time Security', () => {
+    it('should filter real-time updates per user', (done) => {
+      let receivedUpdate = false
+      
+      // User A subscribes to their notes
+      const subscription = userAClient
+        .channel('user-a-notes')
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'private_notes' },
+          (payload: any) => {
+            // Should only receive updates for their own notes
+            expect(payload.new.user_id).toBe(userAClient.auth.getUser().then(u => u.user?.id))
+            receivedUpdate = true
+            subscription.unsubscribe()
+            done()
+          }
+        )
+        .subscribe()
+      
+      // User B inserts a note (should not trigger User A's subscription)
+      setTimeout(async () => {
+        await userBClient.from('private_notes').insert({
+          title: 'User B Note',
+          content: 'Should not be seen by User A',
+          user_id: userBClient.auth.getUser().then(u => u.user?.id)
+        })
+      }, 100)
+      
+      // Timeout if no update received
+      setTimeout(() => {
+        if (!receivedUpdate) {
+          subscription.unsubscribe()
+          done() // Passes if no unauthorized updates received
+        }
+      }, 1000)
+    })
+  })
+  
+  // TEST 6: Admin Role Escalation
+  describe('Role Escalation Prevention', () => {
+    it('should prevent users from self-promoting to admin', async () => {
+      const { error } = await userAClient
+        .from('profiles')
+        .update({ role: 'admin' })
+        .eq('id', userAClient.auth.getUser().then(u => u.user?.id))
+      
+      expect(error).toBeTruthy()
+    })
+    
+    it('should verify admin-only routes reject regular users', async () => {
+      // Assuming you have an admin-only table
+      const { data, error } = await userAClient
+        .from('admin_settings')
+        .select('*')
+      
+      expect(error).toBeTruthy()
+      expect(data).toBeNull()
+    })
+  })
+})
+```
+
+File 2: /scripts/rls-policy-audit.sql
+
+```sql
+-- RLS Policy Audit Script for Supabase
+-- Run this in Supabase SQL Editor to audit your RLS policies
+
+-- 1. Check which tables have RLS enabled
+SELECT 
+    schemaname,
+    tablename,
+    rowsecurity
+FROM pg_tables
+WHERE schemaname = 'public'
+ORDER BY tablename;
+
+-- 2. List all RLS policies with their definitions
+SELECT 
+    schemaname,
+    tablename,
+    policyname,
+    permissive,
+    roles,
+    cmd,
+    qual,
+    with_check
+FROM pg_policies
+WHERE schemaname = 'public'
+ORDER BY tablename, policyname;
+
+-- 3. Find tables WITHOUT RLS enabled (DANGEROUS!)
+SELECT 
+    schemaname,
+    tablename
+FROM pg_tables
+WHERE schemaname = 'public'
+    AND rowsecurity = false
+    AND tablename NOT LIKE 'pg_%'
+    AND tablename NOT LIKE 'sql_%'
+ORDER BY tablename;
+
+-- 4. Check for overly permissive policies
+SELECT 
+    schemaname,
+    tablename,
+    policyname,
+    cmd,
+    qual
+FROM pg_policies
+WHERE schemaname = 'public'
+    AND (qual LIKE '%true%' OR qual IS NULL)
+ORDER BY tablename;
+
+-- 5. Audit policies that don't use auth.uid()
+SELECT 
+    schemaname,
+    tablename,
+    policyname,
+    cmd,
+    qual
+FROM pg_policies
+WHERE schemaname = 'public'
+    AND qual NOT LIKE '%auth.uid()%'
+    AND qual NOT LIKE '%auth.jwt()%'
+    AND tablename NOT IN ('_prisma_migrations', 'some_public_table')
+ORDER BY tablename;
+
+-- 6. Count policies per table (should have SELECT, INSERT, UPDATE, DELETE)
+SELECT 
+    tablename,
+    COUNT(*) as policy_count,
+    STRING_AGG(cmd, ', ') as commands_covered
+FROM pg_policies
+WHERE schemaname = 'public'
+GROUP BY tablename
+HAVING COUNT(*) < 4  -- Tables missing some CRUD policies
+ORDER BY policy_count;
+
+-- 7. Check for policies allowing public/anonymous access
+SELECT 
+    tablename,
+    policyname,
+    roles,
+    cmd,
+    qual
+FROM pg_policies
+WHERE schemaname = 'public'
+    AND roles::text LIKE '%anon%'
+    OR roles::text LIKE '%public%'
+    OR roles::text LIKE '%authenticated%'
+ORDER BY tablename;
+```
+
+File 3: /tests/security/attack-scenarios.md
+
+```markdown
+# Attack Simulation Scenarios for Agent
+
+## Scenario 1: Unauthenticated Data Access
+**Goal:** Test if anonymous users can access protected data
+
+**Steps:**
+1. Without logging in, attempt to:
+   - List all users: `GET /api/users`
+   - View any profile: `GET /api/profiles/1`
+   - Access admin endpoints
+   
+**Expected:** 401 Unauthorized for all attempts
+
+## Scenario 2: Horizontal Privilege Escalation
+**Goal:** Test if User A can access User B's data
+
+**Steps:**
+1. Log in as User A (regular user)
+2. Note User A's user ID
+3. Attempt to:
+   - View User B's profile (replace ID in URL)
+   - Update User B's data
+   - Delete User B's data
+   
+**Expected:** 403 Forbidden or empty results
+
+## Scenario 3: Vertical Privilege Escalation
+**Goal:** Test if regular user can gain admin access
+
+**Steps:**
+1. Log in as regular user
+2. Attempt to:
+   - Access `/api/admin/*` endpoints
+   - Modify admin-only settings
+   - Create admin users
+   - Self-promote to admin role
+   
+**Expected:** 403 Forbidden for all attempts
+
+## Scenario 4: SQL Injection
+**Goal:** Test input validation and query parameterization
+
+**Steps:**
+1. In all text inputs, try:
+```
+
+' OR '1'='1
+'; DROP TABLE users; --
+' UNION SELECT * FROM auth.users --
+
+```
+2. In URL parameters, try:
+```
+
+/api/users?id=1 OR 1=1
+/api/search?q='; SELECT * FROM profiles--
+
+```
+
+**Expected:** Input rejected or sanitized, no data loss
+
+## Scenario 5: File Upload Bypass
+**Goal:** Test if malicious files can be uploaded
+
+**Steps:**
+1. Attempt to upload:
+- Files with executable extensions (.exe, .sh, .php)
+- Files with double extensions (image.jpg.exe)
+- Oversized files (>10MB)
+- Files with malicious content (script tags, PHP code)
+
+**Expected:** Files rejected with validation errors
+
+## Scenario 6: Session Hijacking
+**Goal:** Test session security
+
+**Steps:**
+1. Copy a valid session cookie
+2. Use it from different IP/device
+3. Modify JWT claims if using tokens
+4. Attempt to extend session indefinitely
+
+**Expected:** Sessions invalidated on IP change, tokens expire
+
+## Remediation Steps for Agent:
+
+### If RLS Test Fails:
+1. Check table RLS status in Supabase
+2. Review policy definitions
+3. Test policies as different users
+4. Fix policies, then re-run tests
+
+### If SQL Injection Succeeds:
+1. Find vulnerable queries
+2. Replace string concatenation with parameterized queries
+3. Add Zod validation for all inputs
+4. Implement query timeout limits
+
+### If File Upload Bypassed:
+1. Review storage bucket policies
+2. Add file type validation server-side
+3. Implement virus scanning
+4. Store files outside web root
+```
+
+Agent Instructions:
+
+1. Install test runner: npm install -D vitest
+2. Set up test environment variables
+3. Run tests: npm test -- rls-attack
+4. Execute SQL audit in Supabase
+5. Document findings and fix issues
+6. Re-run tests until all pass
+
+---
+
+PART 4: CI/CD SECURITY PIPELINE (GITHUB ACTIONS)
+
+Implementation Files:
+
+File 1: .github/workflows/security-pipeline.yml
+
+```yaml
+name: Security Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly security scan
+
+env:
+  NODE_VERSION: '20'
+  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+jobs:
+  # Stage 1: Code Quality & SAST
+  code-quality:
+    name: Code Quality & SAST
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: TypeScript type checking
+      run: npx tsc --noEmit
+      
+    - name: ESLint security scan
+      run: |
+        npm install eslint-plugin-security
+        npx eslint . \
+          --ext .js,.jsx,.ts,.tsx \
+          --config .eslintrc.json \
+          --max-warnings 0
+          
+    - name: Detect secrets in code
+      uses: gitleaks/gitleaks-action@v2
+      with:
+        config-path: .gitleaks.toml
+        
+    - name: Dependency vulnerability scan
+      uses: snyk/actions/node@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        args: --severity-threshold=high --fail-on=upgradable
+        
+    - name: Check for outdated dependencies
+      run: npx npm-check-updates --errorLevel 2
+      
+  # Stage 2: Security Testing
+  security-testing:
+    name: Security Testing
+    runs-on: ubuntu-latest
+    needs: code-quality
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run security unit tests
+      run: npm test -- --run security
+      env:
+        NODE_ENV: test
+        NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        
+    - name: CSP validation
+      run: |
+        # Check CSP configuration
+        if ! grep -q "Content-Security-Policy" middleware.ts; then
+          echo "❌ CSP not configured in middleware"
+          exit 1
+        fi
+        echo "✅ CSP configuration found"
+        
+    - name: Generate SBOM
+      run: |
+        npm install -g @cyclonedx/cyclonedx-npm
+        cyclonedx-npm --output-file sbom.json
+        echo "SBOM generated: $(cat sbom.json | jq '.components | length') components"
+        
+    - name: Upload SBOM artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: sbom
+        path: sbom.json
+        retention-days: 90
+        
+    - name: Trivy vulnerability scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: Upload Trivy results
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: 'trivy-results.sarif'
+        
+  # Stage 3: DAST & Production Checks
+  dast-scan:
+    name: DAST Scan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Deploy to staging
+      uses: bobheadxi/deployments@v1
+      with:
+        step: start
+        env: staging
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Wait for deployment
+      run: sleep 60
+      
+    - name: OWASP ZAP baseline scan
+      uses: zaproxy/action-baseline@v0.11.0
+      with:
+        target: 'https://staging.your-app.com'
+        rules_file_name: '.zap/rules.tsv'
+        cmd_options: '-a'
+        
+    - name: Security headers test
+      run: |
+        curl -s -I https://staging.your-app.com | grep -i "content-security-policy" || {
+          echo "❌ Missing CSP header"
+          exit 1
+        }
+        
+    - name: Complete deployment
+      uses: bobheadxi/deployments@v1
+      with:
+        step: finish
+        env: staging
+        token: ${{ secrets.GITHUB_TOKEN }}
+        status: ${{ job.status }}
+        
+  # Stage 4: Compliance & Reporting
+  compliance:
+    name: Compliance Check
+    runs-on: ubuntu-latest
+    needs: [code-quality, security-testing]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download SBOM artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: sbom
+        
+    - name: Check license compliance
+      run: |
+        npm install -g license-checker
+        license-checker --json --out license-report.json
+        # Check for problematic licenses
+        if jq -e '.[] | select(.license == "GPL")' license-report.json; then
+          echo "⚠️  GPL licenses found - review needed"
+        fi
+        
+    - name: Generate security report
+      run: |
+        echo "# Security Scan Report" > security-report.md
+        echo "Generated: $(date)" >> security-report.md
+        echo "## Summary" >> security-report.md
+        echo "- ✅ TypeScript: Passed" >> security-report.md
+        echo "- ✅ ESLint: Passed" >> security-report.md
+        echo "- ✅ Dependency Scan: Passed" >> security-report.md
+        echo "- ✅ SBOM Generated" >> security-report.md
+        echo "## SBOM Statistics" >> security-report.md
+        echo "Components: $(jq '.components | length' sbom.json)" >> security-report.md
+        echo "## Recommendations" >> security-report.md
+        echo "1. Review dependency licenses quarterly" >> security-report.md
+        echo "2. Monitor for new CVEs daily" >> security-report.md
+        
+    - name: Upload security report
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-report
+        path: security-report.md
+        
+    - name: Create security summary comment
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const report = fs.readFileSync('security-report.md', 'utf8');
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `## 🔐 Security Scan Complete\n\n${report}`
+          });
+```
+
+File 2: .github/workflows/dependency-update.yml
+
+```yaml
+name: Dependency Updates
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'  # Every Monday at midnight
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  dependabot:
+    name: Dependency Security Updates
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Update dependencies
+      run: |
+        npx npm-check-updates -u --target minor
+        npm install
+        
+    - name: Run security tests
+      run: npm test -- --run security
+      
+    - name: Create Pull Request if updates available
+      if: success()
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: 'chore: security dependency updates'
+        title: '🔒 Security Dependency Updates'
+        body: |
+          ## Security Dependency Updates
+          
+          Automated security updates applied:
+          
+          - Updated vulnerable dependencies
+          - Patched security issues
+          - Maintained compatibility
+          
+          ### Review Checklist:
+          - [ ] Test the application thoroughly
+          - [ ] Check for breaking changes
+          - [ ] Verify all security tests pass
+          
+        branch: security-updates-$(date +%Y%m%d)
+        delete-branch: true
+        labels: |
+          security
+          dependencies
+          automated-pr
+```
+
+File 3: .gitleaks.toml (Secrets detection)
+
+```toml
+title = "gitleaks config"
+
+[[rules]]
+id = "supabase-service-key"
+description = "Supabase Service Role Key"
+regex = '''(?i)service_role[=\s][\"\']?[a-zA-Z0-9\.\-\_]+\"\'?'''
+tags = ["key", "supabase", "secret"]
+
+[[rules]]
+id = "jwt-secret"
+description = "JWT Secret"
+regex = '''(?i)jwt[_-]?secret[=\s][\"\']?[a-zA-Z0-9\.\-\_]+\"\'?'''
+tags = ["key", "jwt", "secret"]
+
+[[rules]]
+id = "database-url"
+description = "Database connection URL with password"
+regex = '''postgres(ql)?://[^:]+:[^@]+@'''
+tags = ["key", "database", "secret"]
+
+[[rules]]
+id = "api-key"
+description = "Generic API key"
+regex = '''(?i)(api[_-]?key|access[_-]?token)[=\s][\"\']?[a-zA-Z0-9\.\-\_]+\"\'?'''
+tags = ["key", "api", "secret"]
+
+[[rules]]
+id = "email-password"
+description = "Email service password"
+regex = '''(?i)(smtp|mail|email)[_-].*pass(word)?[=\s][\"\']?[a-zA-Z0-9\.\-\_]+\"\'?'''
+tags = ["password", "email", "secret"]
+
+# Allowlist false positives
+[[allowlist]]
+paths = [
+  ".env.example",
+  ".env.sample",
+  "*.test.ts",
+  "*.spec.ts",
+  "tests/**"
+]
+
+[[allowlist]]
+regexes = [
+  "example_key",
+  "test_password",
+  "dummy_.*"
+]
+```
+
+File 4: .github/workflows/emergency-patch.yml
+
+```yaml
+name: Emergency Security Patch
+
+on:
+  repository_dispatch:
+    types: [security-alert]
+
+jobs:
+  emergency-patch:
+    name: Apply Emergency Security Patch
+    runs-on: ubuntu-latest
+    if: github.event_name == 'repository_dispatch'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Parse security alert
+      id: alert
+      run: |
+        echo "ALERT_TYPE=${{ github.event.client_payload.type }}" >> $GITHUB_OUTPUT
+        echo "CVE_ID=${{ github.event.client_payload.cve_id }}" >> $GITHUB_OUTPUT
+        echo "SEVERITY=${{ github.event.client_payload.severity }}" >> $GITHUB_OUTPUT
+        
+    - name: Critical severity - immediate patch
+      if: steps.alert.outputs.SEVERITY == 'critical'
+      run: |
+        # Update immediately for critical vulnerabilities
+        npx npm-check-updates --filter "/${{ steps.alert.outputs.CVE_ID }}/" -u
+        npm install
+        
+        # Create emergency patch
+        git config user.name "Security Bot"
+        git config user.email "security@company.com"
+        git add package*.json
+        git commit -m "EMERGENCY PATCH: ${{ steps.alert.outputs.CVE_ID }}"
+        git push origin main
+        
+    - name: High severity - create patch PR
+      if: steps.alert.outputs.SEVERITY == 'high'
+      run: |
+        npx npm-check-updates --filter "/${{ steps.alert.outputs.CVE_ID }}/" -u
+        npm install
+        
+        # Create PR for review
+        git checkout -b emergency-patch-${{ steps.alert.outputs.CVE_ID }}
+        git add package*.json
+        git commit -m "HIGH PRIORITY: Patch ${{ steps.alert.outputs.CVE_ID }}"
+        git push origin emergency-patch-${{ steps.alert.outputs.CVE_ID }}
+        
+        # Create PR via API
+        curl -X POST \
+          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/${{ github.repository }}/pulls \
+          -d '{
+            "title": "🚨 EMERGENCY: Patch ${{ steps.alert.outputs.CVE_ID }}",
+            "body": "High severity security patch required",
+            "head": "emergency-patch-${{ steps.alert.outputs.CVE_ID }}",
+            "base": "main",
+            "labels": ["emergency", "security", "high-priority"]
+          }'
+          
+    - name: Send notification
+      run: |
+        # Send to Slack/Teams/Email
+        echo "Security patch applied for ${{ steps.alert.outputs.CVE_ID }}"
+        
+    - name: Update security dashboard
+      run: |
+        # Update your security monitoring system
+        echo "PATCHED: ${{ steps.alert.outputs.CVE_ID }}" >> security-log.txt
+```
+
+File 5: /scripts/security-monitor.sh
+
+```bash
+#!/bin/bash
+
+# Daily security monitoring script for agent
+# Run via cron: 0 9 * * * /path/to/security-monitor.sh
+
+set -e
+
+# Configuration
+APP_URL="https://your-app.com"
+LOG_FILE="/var/log/security-monitor.log"
+ALERT_EMAIL="security-team@company.com"
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
+
+check_headers() {
+    log "Checking security headers..."
+    
+    headers=$(curl -sI "$APP_URL")
+    
+    # Check each required header
+    declare -A required_headers=(
+        ["Content-Security-Policy"]="CSP"
+        ["X-Content-Type-Options"]="No MIME sniffing"
+        ["X-Frame-Options"]="Clickjacking protection"
+        ["Strict-Transport-Security"]="HSTS"
+    )
+    
+    for header in "${!required_headers[@]}"; do
+        if echo "$headers" | grep -qi "$header"; then
+            log "✅ $header present"
+        else
+            log "❌ MISSING: $header - ${required_headers[$header]}"
+            echo "Missing header: $header" | mail -s "Security Alert: Missing Header" "$ALERT_EMAIL"
+        fi
+    done
+}
+
+check_dependencies() {
+    log "Checking for vulnerable dependencies..."
+    
+    # Run npm audit
+    npm audit --audit-level=high > audit-report.txt
+    
+    if grep -q "found 0 vulnerabilities" audit-report.txt; then
+        log "✅ No high/critical vulnerabilities"
+    else
+        log "❌ Vulnerabilities found"
+        cat audit-report.txt | mail -s "Security Alert: Vulnerable Dependencies" "$ALERT_EMAIL"
+    fi
+}
+
+check_ssl() {
+    log "Checking SSL certificate..."
+    
+    expiry=$(echo | openssl s_client -servername "$APP_URL" -connect "$APP_URL:443" 2>/dev/null | \
+             openssl x509 -noout -dates | grep notAfter)
+    
+    expiry_date=$(echo "$expiry" | cut -d= -f2)
+    expiry_epoch=$(date -d "$expiry_date" +%s)
+    now_epoch=$(date +%s)
+    days_left=$(( (expiry_epoch - now_epoch) / 86400 ))
+    
+    if [ "$days_left" -lt 30 ]; then
+        log "⚠️  SSL certificate expires in $days_left days"
+        echo "SSL expires in $days_left days" | mail -s "Security Alert: SSL Expiry" "$ALERT_EMAIL"
+    else
+        log "✅ SSL certificate valid for $days_left days"
+    fi
+}
+
+check_rate_limiting() {
+    log "Testing rate limiting..."
+    
+    # Make rapid requests to test rate limiting
+    for i in {1..110}; do
+        curl -s -o /dev/null -w "%{http_code}" "$APP_URL/api/test" &
+    done
+    wait
+    
+    # Check logs for 429 responses
+    if tail -n 100 /var/log/nginx/access.log | grep -q " 429 "; then
+        log "✅ Rate limiting working"
+    else
+        log "⚠️  Rate limiting may not be active"
+    fi
+}
+
+generate_report() {
+    log "Generating daily security report..."
+    
+    cat > /tmp/security-report-$(date +%Y%m%d).md << EOF
+# Daily Security Report
+Date: $(date)
+
+## 1. Security Headers
+$(curl -sI "$APP_URL" | grep -iE "(content-security|x-frame|x-content|strict-transport)")
+
+## 2. Dependency Status
+$(npm audit --json | jq -r '.metadata.vulnerabilities | "High: \(.high)\nMedium: \(.medium)\nLow: \(.low)"')
+
+## 3. SSL Certificate
+Expires: $(echo | openssl s_client -connect "$APP_URL:443" 2>/dev/null | openssl x509 -noout -enddate)
+
+## 4. System Status
+Uptime: $(uptime)
+Load: $(cat /proc/loadavg)
+
+## 5. Security Recommendations
+1. Review audit logs daily
+2. Monitor for suspicious activity
+3. Keep dependencies updated
+EOF
+    
+    # Send report
+    cat /tmp/security-report-$(date +%Y%m%d).md | mail -s "Daily Security Report" "$ALERT_EMAIL"
+    log "✅ Report sent"
+}
+
+# Main execution
+main() {
+    log "Starting security monitoring..."
+    
+    check_headers
+    check_dependencies
+    check_ssl
+    check_rate_limiting
+    generate_report
+    
+    log "Security monitoring complete"
+}
+
+main "$@"
+```
+
+Agent Instructions for CI/CD Setup:
+
+1. Enable GitHub Actions: Go to repo Settings → Actions → General → Enable workflows
+2. Add Secrets: Add these to GitHub Secrets:
+   · SUPABASE_URL
+   · SUPABASE_ANON_KEY
+   · SUPABASE_SERVICE_KEY
+   · SNYK_TOKEN (get from snyk.io)
+3. Install Dependencies: npm install -D eslint-plugin-security @cyclonedx/cyclonedx-npm
+4. Set up ESLint: Add security plugin to .eslintrc.json
+5. Configure Branch Protection:
+   · Require status checks: code-quality and security-testing
+   · Require PR reviews
+   · Dismiss stale reviews
+6. Enable Dependabot: Go to repo Settings → Code security and analysis → Enable all
+7. Test Workflow: Push a commit to trigger the pipeline
+8. Monitor: Check Actions tab for results
+
+---
+
+IMPLEMENTATION TIMELINE FOR AGENT
+
+Week 1-2: Foundation Setup
+
+```bash
+# Day 1-2: Environment & Dependencies
+npm update next react
+npm install @upstash/redis
+npm install -D vitest @types/node
+
+# Day 3-4: Security Middleware
+cp middleware.ts /middleware.ts
+npm run dev # Test locally
+
+# Day 5-7: RLS Policies
+# Run SQL audit in Supabase
+# Fix any missing RLS policies
+```
+
+Week 3-4: Testing & CI/CD
+
+```bash
+# Day 8-10: Security Tests
+npm test -- --run security
+# Fix any failing tests
+
+# Day 11-13: CI/CD Setup
+# Commit GitHub workflows
+# Configure secrets
+# Test pipeline
+
+# Day 14: Final Audit
+./scripts/test-headers.js
+npm audit
+npm run lint:security
+```
+
+Week 5-6: Monitoring & Maintenance
+
+```bash
+# Set up daily monitoring
+crontab -e
+# Add: 0 9 * * * /path/to/security-monitor.sh
+
+# Configure alerts
+# Set up security dashboard
+# Train team on procedures
+```
+
+VERIFICATION CHECKLIST
+
+After implementation, verify:
+
+1. curl -I https://yourapp.com shows all security headers
+2. npm audit shows 0 high/critical vulnerabilities
+3. All tables in Supabase have RLS enabled
+4. GitHub Actions security pipeline passes
+5. Dependabot alerts are enabled and monitored
+6. SBOM generated on each deployment
+7. Security tests pass: npm test -- security
+8. No secrets in code: gitleaks detect --source .
+9. CSP doesn't break site functionality
+10. Audit logs are being recorded
+
+EMERGENCY CONTACTS & ESCALATION
+
+Security Incident Response:
+
+1. Immediate Action: Isolate affected systems
+2. Contact: Security lead within 15 minutes
+3. Document: All actions taken
+4. Communicate: Transparent update to stakeholders
+
+Emergency Patch Process:
+
+1. Severity: Critical → Immediate auto-patch
+2. Severity: High → PR within 4 hours
+3. Severity: Medium → Next business day
+4. Severity: Low → Next scheduled update
+
+This complete plan gives your agent everything needed to implement enterprise-grade security step by step. Each section has exact code, verification steps, and clear instructions.

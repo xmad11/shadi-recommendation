@@ -4,7 +4,7 @@
 
 "use client"
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react"
+import { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef, type ReactNode } from "react"
 import {
   DEFAULT_LANGUAGE,
   getLanguageButtonLabel,
@@ -27,37 +27,44 @@ interface LanguageProviderProps {
 
 export function LanguageProvider({ children, initialLanguage }: LanguageProviderProps) {
   const [language, setLanguage] = useState<Language>(initialLanguage)
-  const [isPending, setIsPending] = useState(false)
+  const languageRef = useRef(language)
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    languageRef.current = language
+  }, [language])
 
   const toggleLanguage = useCallback(async () => {
-    if (isPending) return
+    const currentLanguage = languageRef.current
+    const nextLanguage = getToggleLanguage(currentLanguage)
 
-    setIsPending(true)
     try {
       const response = await fetch("/api/language", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currentLanguage: language }),
+        body: JSON.stringify({ currentLanguage }),
       })
 
       if (response.ok) {
         const { language: newLang } = await response.json()
         setLanguage(newLang)
-        // Reload to apply language changes to HTML
-        window.location.reload()
+        // Update HTML lang attribute without reload
+        document.documentElement.lang = newLang
       }
     } catch (error) {
       console.error("Failed to toggle language:", error)
-    } finally {
-      setIsPending(false)
     }
-  }, [language, isPending])
+  }, []) // No dependencies - uses ref instead
 
-  const value: LanguageContextValue = {
-    language,
-    buttonLabel: getLanguageButtonLabel(language),
-    toggleLanguage,
-  }
+  // Memoize context value to prevent unnecessary re-renders
+  const value = useMemo<LanguageContextValue>(
+    () => ({
+      language,
+      buttonLabel: getLanguageButtonLabel(language),
+      toggleLanguage,
+    }),
+    [language, toggleLanguage]
+  )
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>
 }

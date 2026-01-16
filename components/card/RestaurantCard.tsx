@@ -5,9 +5,9 @@ import { DetailedVariant, ListVariant } from "./variants"
 
 export const RestaurantCard = memo(function RestaurantCard({
   id,
-  name,
+  image,
   images,
-  price,
+  priceBucketId,
   cuisine,
   description,
   emirate,
@@ -15,11 +15,14 @@ export const RestaurantCard = memo(function RestaurantCard({
   address,
   mapCoordinates,
   features,
+  name,
   variant = "detailed",
   href,
+  locale = "ar",
 }: ShadiRestaurant & {
   variant?: CardVariant
   href?: string
+  locale?: "en" | "ar"
 }) {
   const location = emirate || district ? { emirate, district, address, mapCoordinates } : undefined
 
@@ -31,7 +34,8 @@ export const RestaurantCard = memo(function RestaurantCard({
           alt={name}
           title={name}
           category={cuisine}
-          price={price}
+          priceBucketId={priceBucketId}
+          locale={locale}
           location={location}
           features={features}
           href={href}
@@ -44,7 +48,8 @@ export const RestaurantCard = memo(function RestaurantCard({
           title={name}
           description={description}
           cuisine={cuisine}
-          price={price}
+          priceBucketId={priceBucketId}
+          locale={locale}
           location={location}
           href={href}
         />

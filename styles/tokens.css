@@ -126,8 +126,22 @@
   --card-meta-xs: 0.75rem;
   --card-meta-2xs: 0.625rem;
 
+  /* Carousel Indicators */
+  --carousel-indicator-width: 0.75rem;
+  --carousel-indicator-height: 0.25rem;
+  --carousel-indicator-dot-size: 0.25rem;
+  --carousel-indicator-gap: 0.25rem;
+  --carousel-indicator-width-mobile: 0.5rem;
+  --carousel-indicator-height-mobile: 0.125rem;
+  --carousel-indicator-dot-size-mobile: 0.125rem;
+  --carousel-indicator-gap-mobile: 0.25rem;
+
   /* Icons */
+  --icon-size-xs: 0.75rem;
+  --icon-size-sm: 1rem;
+  --icon-size-md: 1.25rem;
   --icon-size-lg: 1.5rem;
+  --icon-size-xl: 2rem;
 
   /* Z-index */
   --z-header: 50;
@@ -139,4 +153,29 @@
   /* Opacity */
   --opacity-full: 1;
   --opacity-faint: 0;
+
+  /* Typography weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Component-specific */
+  --card-accent-restaurant: oklch(0.65 0.08 45);
+  --card-accent-blog: oklch(0.58 0.14 250);
+  --bg-secondary: oklch(0.95 0.005 70);
+  --badge-primary: oklch(0.65 0.08 45);
+  --secondary-gray: oklch(0.50 0.01 50);
+
+  /* Badge tokens (from shadi-V2) - must be in :root to work with var() */
+  --color-favorite: oklch(0.55 0.2 25); /* Rose red for favorite hearts */
+  --color-white: oklch(1 0 0);
+  --badge-bg: oklch(0.55 0.2 25 / 0.5); /* Rose red 50% transparent for glassmorphism */
+  --badge-blur: 8px; /* Backdrop blur for glassmorphism */
+  --badge-padding-x: var(--spacing-xs); /* 4px horizontal padding */
+  --badge-padding-y: 2px; /* 2px vertical padding */
+  --badge-font-size: calc(var(--font-size-xs) * 0.85); /* Slightly smaller than xs */
+  --badge-radius: var(--radius-sm); /* Small radius, NOT rounded-full */
+  --badge-gap: var(--spacing-xs); /* 4px gap between elements */
+  --badge-color: var(--color-white); /* Always white text */
 }

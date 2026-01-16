@@ -11,5 +11,11 @@ export async function getLanguage(): Promise<Language> {
 
 export async function setLanguage(lang: Language) {
   const store = await cookies()
-  store.set(LANGUAGE_COOKIE, lang, { path: "/" })
+  store.set(LANGUAGE_COOKIE, lang, {
+    path: "/",
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 60 * 60 * 24 * 365, // 1 year
+  })
 }

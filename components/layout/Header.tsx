@@ -4,7 +4,7 @@
 
 "use client"
 
-import { Bars3BottomRightIcon } from "@/components/icons"
+import { Menu } from "lucide-react"
 import { BackButton } from "@/components/navigation/BackButton"
 import { useNavigation } from "@/components/navigation/NavigationProvider"
 import { useLanguage } from "@/context/LanguageProvider"
@@ -24,6 +24,7 @@ function AppHeaderComponent() {
   const [isScrolled, setIsScrolled] = useState(false)
   const lastScrollY = useRef(0)
   const ticking = useRef(false)
+  const rafId = useRef<number>(0)
 
   /* ─────────────────────────────────────────────────────────────────────────
      Scroll handler with requestAnimationFrame throttling
@@ -40,12 +41,15 @@ function AppHeaderComponent() {
     const handleScroll = () => {
       if (!ticking.current) {
         ticking.current = true
-        requestAnimationFrame(updateScrollState)
+        rafId.current = requestAnimationFrame(updateScrollState)
       }
     }
 
     window.addEventListener("scroll", handleScroll, { passive: true })
-    return () => window.removeEventListener("scroll", handleScroll)
+    return () => {
+      window.removeEventListener("scroll", handleScroll)
+      if (rafId.current) cancelAnimationFrame(rafId.current)
+    }
   }, [])
 
   /* ─────────────────────────────────────────────────────────────────────────
@@ -115,7 +119,7 @@ function AppHeaderComponent() {
             <button
               type="button"
               onClick={toggleLanguage}
-              className="px-3 py-1.5 rounded-lg bg-[var(--fg-10)] text-[var(--fg)] font-medium hover:bg-[var(--fg-20)] transition-colors touch-target"
+              className="px-[var(--spacing-sm)] py-[var(--spacing-xs)] rounded-[var(--radius-lg)] bg-[var(--glass-bg)] backdrop-blur-[var(--glass-blur)] text-[var(--fg)] font-medium transition-colors touch-target hover:bg-[var(--fg-5)]"
               aria-label="Toggle language"
             >
               {buttonLabel}
@@ -127,7 +131,7 @@ function AppHeaderComponent() {
               className="transition-all active:scale-95 group relative p-[var(--spacing-sm)] touch-target"
               aria-label="Open menu"
             >
-              <Bars3BottomRightIcon className="h-[var(--icon-size-lg)] w-[var(--icon-size-lg)] text-[var(--fg)] stroke-[2px]" />
+              <Menu className="h-[var(--icon-size-lg)] w-[var(--icon-size-lg)] text-[var(--fg)]" />
             </button>
           </div>
         </div>
@@ -140,4 +144,3 @@ function AppHeaderComponent() {
 }
 
 export const AppHeader = memo(AppHeaderComponent)
-export default memo(AppHeaderComponent)

@@ -1,6 +1,7 @@
 "use client"
 
-import { ChevronDown, XMarkIcon } from "@/components/icons"
+import { ChevronDown, X } from "lucide-react"
+import { useMemo, useCallback } from "react"
 import type { MealType, AtmosphereType } from "@/types/restaurant"
 
 /* =========================
@@ -75,14 +76,11 @@ interface DropdownProps {
 function Dropdown({ label, value, onChange, options }: DropdownProps) {
   return (
     <div className="relative">
-      <label className="block text-xs font-medium text-[var(--fg-50)] mb-1.5">
-        {label}
-      </label>
       <div className="relative">
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full appearance-none bg-white border border-[var(--fg-20)] rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-[var(--fg)] cursor-pointer transition-all hover:border-[var(--fg-30)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+          className="w-full appearance-none bg-white border border-[var(--fg-20)] rounded-lg px-2 sm:px-4 py-2.5 pr-8 sm:pr-10 text-sm font-medium text-[var(--fg)] cursor-pointer transition-all hover:border-[var(--fg-30)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
         >
           {options.map((option) => (
             <option key={option.id} value={option.id}>
@@ -90,7 +88,7 @@ function Dropdown({ label, value, onChange, options }: DropdownProps) {
             </option>
           ))}
         </select>
-        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--fg-50)] pointer-events-none" />
+        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--fg-50)] pointer-events-none" strokeWidth={2} />
       </div>
     </div>
   )
@@ -113,7 +111,7 @@ function ActiveBadge({
       className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black text-white text-xs font-medium hover:bg-black/80 transition-colors"
     >
       {label}
-      <XMarkIcon className="w-3 h-3" />
+      <X className="w-3 h-3" />
     </button>
   )
 }
@@ -139,11 +137,17 @@ export function FilterSystem({
   atmosphere,
   onAtmosphereChange,
 }: FilterSystemProps) {
-  const activeFilters = [
-    cuisine !== "all" ? { label: cuisine, remove: () => onCuisineChange("all") } : null,
-    meal !== "all" ? { label: meal, remove: () => onMealChange("all") } : null,
-    atmosphere !== "all" ? { label: atmosphere, remove: () => onAtmosphereChange("all") } : null,
-  ].filter(Boolean)
+  // Stable remove callbacks
+  const handleRemoveCuisine = useCallback(() => onCuisineChange("all"), [onCuisineChange])
+  const handleRemoveMeal = useCallback(() => onMealChange("all"), [onMealChange])
+  const handleRemoveAtmosphere = useCallback(() => onAtmosphereChange("all"), [onAtmosphereChange])
+
+  // Memoize activeFilters to prevent recreation on every render
+  const activeFilters = useMemo(() => [
+    cuisine !== "all" ? { label: cuisine, remove: handleRemoveCuisine } : null,
+    meal !== "all" ? { label: meal, remove: handleRemoveMeal } : null,
+    atmosphere !== "all" ? { label: atmosphere, remove: handleRemoveAtmosphere } : null,
+  ].filter(Boolean), [cuisine, meal, atmosphere, handleRemoveCuisine, handleRemoveMeal, handleRemoveAtmosphere])
 
   return (
     <div className="space-y-4">

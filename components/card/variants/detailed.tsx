@@ -1,6 +1,7 @@
 import { CardCarousel } from "@/components/carousel"
-import { MapPinIcon } from "@/components/icons"
-import type { PriceTier, MapCoordinates, UAEEmirate } from "@/types/restaurant"
+import { MapPin } from "lucide-react"
+import type { PriceBucketId, MapCoordinates, UAEEmirate } from "@/types/restaurant"
+import { getPriceLabel } from "@/types/restaurant"
 import { memo } from "react"
 
 export interface DetailedVariantProps {
@@ -8,7 +9,8 @@ export interface DetailedVariantProps {
   alt: string
   title: string
   category?: string
-  price?: PriceTier
+  priceBucketId?: PriceBucketId
+  locale?: "en" | "ar"
   location?: {
     emirate?: UAEEmirate
     district?: string
@@ -24,42 +26,38 @@ export const DetailedVariant = memo(function DetailedVariant({
   alt,
   title,
   category,
-  price,
+  priceBucketId,
+  locale = "ar",
   location,
   features = [],
   href,
 }: DetailedVariantProps) {
-  const hasMultipleImages = (images?.length || 0) > 1
   const locationStr = location ? [location.district, location.emirate].filter(Boolean).join(", ") : undefined
 
   const content = (
-    <div className="flex flex-col h-auto group">
+    <div className="flex flex-col h-auto group min-w-0">
       <div className="relative aspect-[4/3] rounded-[var(--radius-xl)] overflow-hidden">
-        <CardCarousel images={images || []} alt={alt} height="100%" className="h-full" restaurantName={title} showIndicators={false} />
-
-        {hasMultipleImages && (
-          <div className="absolute top-[var(--dot-size-xs)] left-1/2 -translate-x-1/2 flex gap-[var(--dot-size-xs)]">
-            {images.slice(0, 3).map((img, i) => (
-              <span key={`image-dot-${i}-${img}`} className="w-[var(--spacing-xs)] h-[var(--spacing-xs)] rounded-full bg-[var(--color-white)]/80 shadow-sm" />
-            ))}
-          </div>
+        <CardCarousel images={images || []} alt={alt} height="100%" className="h-full" restaurantName={title} showIndicators={true} />
+        {category && (
+          <span className="absolute top-2 left-2 z-50 inline-block px-2 py-1 rounded-md bg-black/60 backdrop-blur-md text-white text-xs font-semibold shadow-sm pointer-events-none">
+            {category}
+          </span>
         )}
       </div>
 
-      <div className="mt-[var(--spacing-sm)] flex flex-col justify-start">
+      <div className="mt-[var(--spacing-sm)] flex flex-col justify-start pt-1">
         <h3 className="text-[var(--font-size-sm)] font-[var(--font-weight-semibold)] text-[var(--fg)] line-clamp-1 leading-tight">{title}</h3>
 
         {locationStr && (
-          <div className="flex items-center gap-[var(--card-gap-xs)] mt-[var(--spacing-xs)]">
-            <MapPinIcon className="w-[var(--font-size-sm)] h-[var(--font-size-sm)] text-secondary-gray flex-shrink-0" aria-hidden="true" />
-            <span className="text-[var(--font-size-sm)] text-secondary-gray line-clamp-1 leading-tight">{locationStr}</span>
+          <div className="flex items-center gap-1.5 text-sm text-[var(--fg-50)] mt-[var(--spacing-xs)]">
+            <MapPin className="w-4 h-4 text-[var(--color-primary)] flex-shrink-0" aria-hidden="true" strokeWidth={1.5} />
+            <span className="line-clamp-1 leading-tight">{locationStr}</span>
           </div>
         )}
 
-        {(category || price) && (
-          <div className="flex items-center justify-between mt-[var(--spacing-xs)]">
-            {category && <span className="inline-block px-[var(--card-gap-xs)] py-[var(--radius-xs)] bg-badge-primary/10 text-badge-primary rounded text-[var(--card-meta-2xs)] font-medium truncate text-[var(--font-size-xs)]">{category}</span>}
-            {price && <span className="text-secondary-gray ml-auto text-[var(--font-size-xs)]">{price}</span>}
+        {priceBucketId && (
+          <div className="flex items-center gap-1.5 mt-[var(--spacing-xs)]">
+            <span className="inline-block px-3 py-1 rounded-full bg-[var(--color-primary)]/8 text-[var(--color-primary)] text-xs font-medium">{getPriceLabel(priceBucketId, locale)}</span>
           </div>
         )}
       </div>

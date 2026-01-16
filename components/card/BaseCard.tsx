@@ -3,7 +3,7 @@
    2 variants: detailed, list
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-import { memo } from "react"
+import { memo, useMemo } from "react"
 
 export type CardVariant = "detailed" | "list"
 export type CardType = "restaurant" | "blog"
@@ -44,11 +44,11 @@ export const BaseCard = memo(function BaseCard({
 
   // Interactive element
   const Wrapper = href ? "a" : onClick ? "button" : "div"
-  const wrapperProps: Record<string, unknown> = href
-    ? { href, className: "block" }
-    : onClick
-      ? { type: "button" as const, onClick, className: "w-full text-left" }
-      : {}
+  const wrapperProps = useMemo<Record<string, unknown>>(() => {
+    if (href) return { href, className: "block min-w-0" }
+    if (onClick) return { type: "button" as const, onClick, className: "w-full text-left" }
+    return { className: "min-w-0" }
+  }, [href, onClick])
 
   return (
     <Wrapper

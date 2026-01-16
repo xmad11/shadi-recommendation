@@ -7,7 +7,7 @@
 
 import { OptimizedImage } from "@/components/images"
 import useEmblaCarousel from "embla-carousel-react"
-import { useCallback, useEffect, useState } from "react"
+import { memo, useCallback, useEffect, useMemo, useState } from "react"
 
 /* ═══════════════════════════════════════════════════════════════════════════════
    TYPES
@@ -35,7 +35,7 @@ export interface CardCarouselProps {
    CARD CAROUSEL COMPONENT
    ───────────────────────────────────────────────────────────────────────────── */
 
-export function CardCarousel({
+function CardCarouselComponent({
   images,
   alt = "Restaurant image",
   className = "",
@@ -81,25 +81,27 @@ export function CardCarousel({
     }
   }, [emblaApi, onSelect])
 
-  // Normalize images to CardCarouselImage format
-  const normalizedImages: CardCarouselImage[] = (images || []).map((img) => {
-    if (typeof img === "string") {
-      return {
-        url: img,
-        blurHash: fallbackBlurHash,
-        alt: `${alt}`,
-      }
-    }
-    return {
-      url: img.url,
-      blurHash: img.blurHash || fallbackBlurHash,
-      alt: img.alt || alt,
-    }
-  })
-
   // Generate responsive sizes prop
   const sizes =
     "(max-width: 768px) var(--carousel-image-sizes-mobile), (max-width: 1024px) var(--carousel-image-sizes-tablet), var(--carousel-image-sizes-desktop)"
+
+  // Memoize normalized images to avoid expensive operations on every render
+  const normalizedImages = useMemo<CardCarouselImage[]>(() => {
+    return (images || []).map((img) => {
+      if (typeof img === "string") {
+        return {
+          url: img,
+          blurHash: fallbackBlurHash,
+          alt: `${alt}`,
+        }
+      }
+      return {
+        url: img.url,
+        blurHash: img.blurHash || fallbackBlurHash,
+        alt: img.alt || alt,
+      }
+    })
+  }, [images, fallbackBlurHash, alt])
 
   if (normalizedImages.length === 0) return null
 
@@ -132,11 +134,11 @@ export function CardCarousel({
       </div>
 
       {/* Overlay gradient for better text readability */}
-      <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-black)]/20 via-transparent to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-black)]/20 via-transparent to-transparent pointer-events-none z-0" />
 
       {/* Indicators */}
       {showIndicators && normalizedImages.length > 1 && (
-        <div className="absolute bottom-[var(--spacing-sm)] left-1/2 -translate-x-1/2 flex gap-[var(--carousel-indicator-gap)]">
+        <div className="absolute bottom-[var(--spacing-xs)] left-1/2 -translate-x-1/2 flex gap-[var(--carousel-indicator-gap-mobile)] z-10 px-[var(--spacing-xs)] py-[var(--spacing-xs)]/2 rounded-full bg-[var(--color-black)]/20 backdrop-blur-sm sm:bottom-[var(--spacing-sm)] sm:gap-[var(--carousel-indicator-gap)] sm:px-[var(--spacing-xs)] sm:py-[var(--spacing-xs)]/2">
           {normalizedImages.map((img, index) => (
             <button
               key={`indicator-${img.url}-${index}`}
@@ -148,8 +150,8 @@ export function CardCarousel({
               <span
                 className={`block ${
                   index === selectedIndex
-                    ? "w-[var(--carousel-indicator-width)] h-[var(--carousel-indicator-height)] bg-[var(--color-white)] rounded-[var(--radius-full)] shadow-[var(--shadow-lg)]"
-                    : "w-[var(--carousel-indicator-dot-size)] h-[var(--carousel-indicator-dot-size)] bg-[var(--color-white)]/60 hover:bg-[var(--color-white)]/80 rounded-[var(--radius-full)]"
+                    ? "w-[var(--carousel-indicator-width-mobile)] h-[var(--carousel-indicator-height-mobile)] bg-[var(--color-white)] rounded-[var(--radius-full)] shadow-[var(--shadow-lg)] sm:w-[var(--carousel-indicator-width)] sm:h-[var(--carousel-indicator-height)]"
+                    : "w-[var(--carousel-indicator-dot-size-mobile)] h-[var(--carousel-indicator-dot-size-mobile)] bg-[var(--color-white)]/60 hover:bg-[var(--color-white)]/80 rounded-[var(--radius-full)] sm:w-[var(--carousel-indicator-dot-size)] sm:h-[var(--carousel-indicator-dot-size)]"
                 }`}
               />
             </button>
@@ -159,3 +161,5 @@ export function CardCarousel({
     </div>
   )
 }
+
+export const CardCarousel = memo(CardCarouselComponent)

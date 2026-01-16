@@ -1,12 +1,14 @@
 "use client"
 
-import { memo, useState, useCallback, useMemo, useRef } from "react"
+import { memo, useState, useCallback, useMemo, useRef, useEffect } from "react"
 import { RestaurantCard } from "@/components/card"
 import { FilterSystem, type CuisineOption, type MealOption, type AtmosphereOption } from "@/components/search/FilterSystem"
-import { SortButton, type SortOptionId } from "@/components/search/SortSystem"
-import { ChevronDown, XMarkIcon } from "@/components/icons"
-import { priceTierValue } from "@/types/restaurant"
-import type { ShadiRestaurant } from "@/types/restaurant"
+import { ArrowUpDown, ArrowDownUp, ArrowUp, ArrowDown } from "lucide-react"
+import { ChevronDown, X } from "lucide-react"
+import { CardCarousel } from "@/components/carousel"
+import { priceBucketValue, PRICE_BUCKETS, type PriceBucketId, type MealType, type AtmosphereType, type UAEEmirate, type ShadiRestaurant, type CuisineType } from "@/types/restaurant"
+import { useLanguage } from "@/context/LanguageProvider"
+import { useTranslations } from "@/lib/translations"
 
 type AdminSortOptionId =
   | "newest"
@@ -15,6 +17,38 @@ type AdminSortOptionId =
   | "price-desc"
   | "name-asc"
   | "name-desc"
+
+// Admin sort options
+const ADMIN_SORT_OPTIONS = [
+  { id: "newest" as const, icon: ArrowUpDown, label: "Newest First" },
+  { id: "oldest" as const, icon: ArrowDownUp, label: "Oldest First" },
+  { id: "price-asc" as const, icon: ArrowUp, label: "Price: Low to High" },
+  { id: "price-desc" as const, icon: ArrowDown, label: "Price: High to Low" },
+] as const
+
+// Inline Sort Button for Admin
+function AdminSortButton({ currentSort, onSortChange }: { currentSort: AdminSortOptionId; onSortChange: (id: AdminSortOptionId) => void }) {
+  const currentIndex = ADMIN_SORT_OPTIONS.findIndex(opt => opt.id === currentSort)
+  const currentOption = ADMIN_SORT_OPTIONS[currentIndex >= 0 ? currentIndex : 0]
+  const CurrentIcon = currentOption.icon
+
+  const handleClick = useCallback(() => {
+    const nextIndex = (currentIndex + 1) % ADMIN_SORT_OPTIONS.length
+    onSortChange(ADMIN_SORT_OPTIONS[nextIndex].id)
+  }, [currentIndex, onSortChange])
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      className="p-[var(--spacing-xs)] rounded-[var(--radius-lg)] bg-[var(--color-white)] border border-[var(--fg-20)] text-[var(--fg)] hover:border-[var(--fg-30)] hover:bg-[var(--fg-5)] transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+      aria-label={`Sort: ${currentOption.label}. Click to cycle through sort options.`}
+      title={currentOption.label}
+    >
+      <CurrentIcon className="w-[var(--icon-size-md)] h-[var(--icon-size-md)]" strokeWidth={2} />
+    </button>
+  )
+}
 
 interface ContactInfo {
   type: string
@@ -37,8 +71,8 @@ const CONTACT_OPTIONS = [
 ]
 
 const EMIRATES = [
-  { id: "Abu Dhabi", label: "Abu Dhabi" },
   { id: "Dubai", label: "Dubai" },
+  { id: "Abu Dhabi", label: "Abu Dhabi" },
   { id: "Sharjah", label: "Sharjah" },
   { id: "Ajman", label: "Ajman" },
   { id: "Umm Al Quwain", label: "Umm Al Quwain" },
@@ -76,13 +110,6 @@ const ATMOSPHERE_OPTIONS = [
   { id: "View", label: "View" },
 ]
 
-const PRICE_OPTIONS = [
-  { id: "$", label: "$ - Budget-friendly" },
-  { id: "$$", label: "$$ - Moderate" },
-  { id: "$$$", label: "$$$ - Expensive" },
-  { id: "$$$$", label: "$$$$ - Very Expensive" },
-]
-
 /* =========================
    Multi-Select Dropdown
 ========================= */
@@ -118,7 +145,7 @@ function MultiSelectDropdown({ label, selected, options, onChange }: MultiSelect
         <span className="truncate">
           {selected.length > 0 ? selectedLabels.join(", ") : `Select ${label.toLowerCase()}`}
         </span>
-        <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+        <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`} strokeWidth={2} />
       </button>
       {isOpen && (
         <>
@@ -150,39 +177,63 @@ interface AdminClientProps {
 }
 
 export const AdminClient = memo(function AdminClient({ initialRestaurants }: AdminClientProps) {
+  const { language } = useLanguage()
+  const { t } = useTranslations(language)
   const [data, setData] = useState(initialRestaurants)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [showContactMenu, setShowContactMenu] = useState(false)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const [formError, setFormError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [newRestaurant, setNewRestaurant] = useState({
+  const readersRef = useRef<FileReader[]>([])  // Track readers for cleanup
+  const [newRestaurant, setNewRestaurant] = useState<{
+    name: string
+    emirate: UAEEmirate
+    district: string
+    address: string
+    meals: MealType[]
+    cuisines: string[]
+    atmospheres: AtmosphereType[]
+    priceBucketId: PriceBucketId
+    description: string
+    images: string[]
+    mainImageIndex: number
+    contacts: ContactInfo[]
+  }>({
     name: "",
-    emirate: "Abu Dhabi",
+    emirate: "Dubai",
     district: "",
     address: "",
-    meals: [] as string[],
-    cuisines: [] as string[],
-    atmospheres: [] as string[],
-    price: "$" as const,
+    meals: [],
+    cuisines: [],
+    atmospheres: [],
+    priceBucketId: 4, // Default: 50-100 AED
     description: "",
-    images: [] as string[],
+    images: [],
     mainImageIndex: 0,
-    contacts: [] as ContactInfo[],
+    contacts: [],
   })
 
   // Filters
   const [cuisine, setCuisine] = useState<CuisineOption>("all")
   const [meal, setMeal] = useState<MealOption>("all")
   const [atmosphere, setAtmosphere] = useState<AtmosphereOption>("all")
-  const [sort, setSort] = useState<SortOptionId>("newest")
+  const [sort, setSort] = useState<AdminSortOptionId>("newest")
 
   const handleDelete = useCallback((id: string) => {
-    if (confirm("Are you sure you want to delete this restaurant?")) {
-      setData((prev) => prev.filter((r) => r.id !== id))
-    }
+    setDeleteConfirmId(id)
   }, [])
 
+  const confirmDelete = useCallback(() => {
+    if (deleteConfirmId) {
+      setData((prev) => prev.filter((r) => r.id !== deleteConfirmId))
+      setDeleteConfirmId(null)
+    }
+  }, [deleteConfirmId])
+
   const handleEdit = useCallback((id: string) => {
-    alert(`Edit restaurant with ID: ${id}`)
+    // TODO: Implement edit functionality
+    console.log(`Edit restaurant with ID: ${id}`)
   }, [])
 
   const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -191,6 +242,8 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
 
     Array.from(files).forEach((file) => {
       const reader = new FileReader()
+      readersRef.current.push(reader)  // Track reader for cleanup
+
       reader.onloadend = () => {
         setNewRestaurant((prev) => ({
           ...prev,
@@ -199,6 +252,20 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
       }
       reader.readAsDataURL(file)
     })
+  }, [])
+
+  // Cleanup readers on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      readersRef.current.forEach(reader => {
+        try {
+          reader.abort()
+        } catch {
+          // Ignore errors during cleanup
+        }
+      })
+      readersRef.current = []
+    }
   }, [])
 
   const handleRemoveImage = useCallback((index: number) => {
@@ -242,40 +309,82 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
     }))
   }, [])
 
+  // Stable input change handlers to prevent re-renders
+  const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewRestaurant(prev => ({ ...prev, name: e.target.value }))
+  }, [])
+
+  const handleEmirateChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setNewRestaurant(prev => ({ ...prev, emirate: e.target.value as UAEEmirate }))
+  }, [])
+
+  const handleDistrictChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewRestaurant(prev => ({ ...prev, district: e.target.value }))
+  }, [])
+
+  const handleAddressChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewRestaurant(prev => ({ ...prev, address: e.target.value }))
+  }, [])
+
+  const handleDescriptionChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setNewRestaurant(prev => ({ ...prev, description: e.target.value }))
+  }, [])
+
+  const handleMealsChange = useCallback((values: string[]) => {
+    setNewRestaurant(prev => ({ ...prev, meals: values as MealType[] }))
+  }, [])
+
+  const handleCuisinesChange = useCallback((values: string[]) => {
+    setNewRestaurant(prev => ({ ...prev, cuisines: values }))
+  }, [])
+
+  const handleAtmospheresChange = useCallback((values: string[]) => {
+    setNewRestaurant(prev => ({ ...prev, atmospheres: values as AtmosphereType[] }))
+  }, [])
+
+  const handlePriceBucketChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setNewRestaurant(prev => ({ ...prev, priceBucketId: Number(e.target.value) as PriceBucketId }))
+  }, [])
+
   const handleAddRestaurant = useCallback(() => {
     if (!newRestaurant.name || newRestaurant.cuisines.length === 0) {
-      alert("Please fill in at least the name and cuisine")
+      setFormError(t("errorNameAndCuisineRequired"))
       return
     }
 
+    setFormError(null)
+
     const mainImage = newRestaurant.images[newRestaurant.mainImageIndex] || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800"
+    const priceBucket = PRICE_BUCKETS.find((b) => b.id === newRestaurant.priceBucketId)!
 
     const restaurant: ShadiRestaurant = {
       id: `rest-${Date.now()}`,
       slug: newRestaurant.name.toLowerCase().replace(/\s+/g, "-"),
       name: newRestaurant.name,
-      cuisine: newRestaurant.cuisines[0], // Primary cuisine
-      price: newRestaurant.price,
+      cuisine: newRestaurant.cuisines[0] as CuisineType, // Primary cuisine
+      priceBucketId: newRestaurant.priceBucketId,
+      minPrice: priceBucket.minPrice,
+      maxPrice: priceBucket.maxPrice,
       description: newRestaurant.description,
       image: mainImage,
       images: newRestaurant.images.length > 0 ? newRestaurant.images : [mainImage],
       meals: newRestaurant.meals.length > 0 ? newRestaurant.meals : ["Breakfast", "Lunch", "Dinner"],
       atmosphere: newRestaurant.atmospheres.length > 0 ? newRestaurant.atmospheres : ["Casual"],
       district: newRestaurant.district,
-      emirate: newRestaurant.emirate as any,
+      emirate: newRestaurant.emirate as UAEEmirate,
       addedDate: new Date().toISOString(),
     }
 
     setData((prev) => [restaurant, ...prev])
     setNewRestaurant({
       name: "",
-      emirate: "Abu Dhabi",
+      emirate: "Dubai",
       district: "",
       address: "",
       meals: [],
       cuisines: [],
       atmospheres: [],
-      price: "$",
+      priceBucketId: 4,
       description: "",
       images: [],
       mainImageIndex: 0,
@@ -300,49 +409,44 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
       results = results.filter((r) => r.atmosphere?.includes(atmosphere))
     }
 
-    switch (sort) {
-      case "price-desc":
-        results.sort((a, b) => priceTierValue(b.price) - priceTierValue(a.price))
-        break
-      case "price-asc":
-        results.sort((a, b) => priceTierValue(a.price) - priceTierValue(b.price))
-        break
-      case "newest":
-        results.sort((a, b) => {
+    // Sort (create new array to avoid mutation)
+    const sorted = [...results].sort((a, b) => {
+      switch (sort) {
+        case "price-desc":
+          return priceBucketValue(b.priceBucketId) - priceBucketValue(a.priceBucketId)
+        case "price-asc":
+          return priceBucketValue(a.priceBucketId) - priceBucketValue(b.priceBucketId)
+        case "newest":
           const dateA = a.addedDate ? new Date(a.addedDate).getTime() : 0
           const dateB = b.addedDate ? new Date(b.addedDate).getTime() : 0
           return dateB - dateA
-        })
-        break
-      case "oldest":
-        results.sort((a, b) => {
-          const dateA = a.addedDate ? new Date(a.addedDate).getTime() : 0
-          const dateB = b.addedDate ? new Date(b.addedDate).getTime() : 0
-          return dateA - dateB
-        })
-        break
-      case "name-asc":
-        results.sort((a, b) => a.name.localeCompare(b.name))
-        break
-      case "name-desc":
-        results.sort((a, b) => b.name.localeCompare(a.name))
-        break
-    }
+        case "oldest":
+          const dateC = a.addedDate ? new Date(a.addedDate).getTime() : 0
+          const dateD = b.addedDate ? new Date(b.addedDate).getTime() : 0
+          return dateC - dateD
+        case "name-asc":
+          return a.name.localeCompare(b.name)
+        case "name-desc":
+          return b.name.localeCompare(a.name)
+        default:
+          return 0
+      }
+    })
 
-    return results
+    return sorted
   }, [data, cuisine, meal, atmosphere, sort])
 
   return (
     <div className="max-w-[var(--page-max-width)] mx-auto px-[var(--page-padding-x)] py-[var(--spacing-lg)]">
       <div className="flex items-center justify-between mb-[var(--spacing-lg)]">
         <h1 className="text-[var(--font-size-2xl)] font-bold text-[var(--fg)]">
-          Admin Dashboard
+          {t("adminDashboard")}
         </h1>
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg text-sm font-medium hover:bg-[var(--color-primary)]/90 transition-colors"
+          className="px-3 py-2 sm:px-4 bg-[var(--color-primary)] text-white rounded-lg text-sm font-medium hover:bg-[var(--color-primary)]/90 transition-colors"
         >
-          Add Restaurant
+          {t("addRestaurant")}
         </button>
       </div>
 
@@ -357,14 +461,14 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
           onAtmosphereChange={setAtmosphere}
         />
         <div className="flex justify-end">
-          <SortButton currentSort={sort} onSortChange={setSort} />
+          <AdminSortButton currentSort={sort} onSortChange={setSort} />
         </div>
       </div>
 
       {/* Grid */}
       {filteredData.length === 0 ? (
         <div className="text-center py-[var(--spacing-5xl)]">
-          <p className="text-[var(--font-size-lg)] text-[var(--fg-70)]">No restaurants found</p>
+          <p className="text-[var(--font-size-lg)] text-[var(--fg-70)]">{t("noRestaurantsFound")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[var(--spacing-md)]">
@@ -374,6 +478,7 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
                 {...restaurant}
                 variant="detailed"
                 href={`/restaurants/${restaurant.slug}`}
+                locale={language}
               />
 
               <div className="absolute top-[var(--spacing-sm)] right-[var(--spacing-sm)] flex flex-col gap-[var(--spacing-xs)] opacity-0 group-hover:opacity-100 transition-opacity">
@@ -381,13 +486,13 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
                   onClick={() => handleEdit(restaurant.id)}
                   className="px-3 py-1 text-xs rounded bg-blue-600 text-white hover:bg-blue-700"
                 >
-                  Edit
+                  {t("edit")}
                 </button>
                 <button
                   onClick={() => handleDelete(restaurant.id)}
                   className="px-3 py-1 text-xs rounded bg-red-600 text-white hover:bg-red-700"
                 >
-                  Delete
+                  {t("delete")}
                 </button>
               </div>
             </div>
@@ -399,10 +504,31 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-[var(--card-bg)] rounded-[var(--radius-xl)] p-6 w-[700px] max-w-[95vw] max-h-[90vh] overflow-y-auto">
+            {formError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-800">{formError}</p>
+              </div>
+            )}
 
             {/* Image Upload Section */}
             <div className="mb-6">
               <label className="block text-sm font-medium mb-2 text-[var(--fg)]">Restaurant Images</label>
+
+              {/* Image Preview Carousel */}
+              {newRestaurant.images.length > 0 && (
+                <div className="mb-4 aspect-[16/9] rounded-lg overflow-hidden">
+                  <CardCarousel
+                    images={newRestaurant.images}
+                    alt="Restaurant preview"
+                    height="100%"
+                    className="h-full"
+                    restaurantName={newRestaurant.name || "New Restaurant"}
+                    showIndicators={true}
+                  />
+                </div>
+              )}
+
+              {/* Thumbnail Strip for Management */}
               <div className="flex gap-3 overflow-x-auto pb-2">
                 {newRestaurant.images.map((img, index) => (
                   <div
@@ -454,7 +580,7 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
               <input
                 type="text"
                 value={newRestaurant.name}
-                onChange={(e) => setNewRestaurant({ ...newRestaurant, name: e.target.value })}
+                onChange={handleNameChange}
                 className="w-full px-3 py-2 border border-[var(--fg-20)] rounded-lg bg-[var(--color-white)] text-[var(--fg)]"
                 placeholder="Restaurant name"
               />
@@ -465,7 +591,7 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
               <label className="block text-sm font-medium mb-1 text-[var(--fg)]">Emirate</label>
               <select
                 value={newRestaurant.emirate}
-                onChange={(e) => setNewRestaurant({ ...newRestaurant, emirate: e.target.value })}
+                onChange={handleEmirateChange}
                 className="w-full px-3 py-2 border border-[var(--fg-20)] rounded-lg bg-[var(--color-white)] text-[var(--fg)]"
               >
                 {EMIRATES.map((emirate) => (
@@ -482,7 +608,7 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
                 label="Meal Type"
                 selected={newRestaurant.meals}
                 options={MEAL_OPTIONS}
-                onChange={(values) => setNewRestaurant({ ...newRestaurant, meals: values })}
+                onChange={handleMealsChange}
               />
             </div>
 
@@ -492,7 +618,7 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
                 label="Cuisine *"
                 selected={newRestaurant.cuisines}
                 options={CUISINE_OPTIONS}
-                onChange={(values) => setNewRestaurant({ ...newRestaurant, cuisines: values })}
+                onChange={handleCuisinesChange}
               />
             </div>
 
@@ -502,21 +628,21 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
                 label="Atmosphere"
                 selected={newRestaurant.atmospheres}
                 options={ATMOSPHERE_OPTIONS}
-                onChange={(values) => setNewRestaurant({ ...newRestaurant, atmospheres: values })}
+                onChange={handleAtmospheresChange}
               />
             </div>
 
-            {/* Price Range */}
+            {/* Price Range - AED Buckets */}
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-1 text-[var(--fg)]">Price Range</label>
+              <label className="block text-sm font-medium mb-1 text-[var(--fg)]">Price Range (AED)</label>
               <select
-                value={newRestaurant.price}
-                onChange={(e) => setNewRestaurant({ ...newRestaurant, price: e.target.value as any })}
+                value={newRestaurant.priceBucketId}
+                onChange={handlePriceBucketChange}
                 className="w-full px-3 py-2 border border-[var(--fg-20)] rounded-lg bg-[var(--color-white)] text-[var(--fg)]"
               >
-                {PRICE_OPTIONS.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
+                {PRICE_BUCKETS.map((bucket) => (
+                  <option key={bucket.id} value={bucket.id}>
+                    {bucket.labelAr}
                   </option>
                 ))}
               </select>
@@ -528,7 +654,7 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
               <input
                 type="text"
                 value={newRestaurant.district}
-                onChange={(e) => setNewRestaurant({ ...newRestaurant, district: e.target.value })}
+                onChange={handleDistrictChange}
                 className="w-full px-3 py-2 border border-[var(--fg-20)] rounded-lg bg-[var(--color-white)] text-[var(--fg)]"
                 placeholder="e.g., Downtown, Marina"
               />
@@ -539,7 +665,7 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
               <input
                 type="text"
                 value={newRestaurant.address}
-                onChange={(e) => setNewRestaurant({ ...newRestaurant, address: e.target.value })}
+                onChange={handleAddressChange}
                 className="w-full px-3 py-2 border border-[var(--fg-20)] rounded-lg bg-[var(--color-white)] text-[var(--fg)]"
                 placeholder="Building, street, area"
               />
@@ -550,7 +676,7 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
               <label className="block text-sm font-medium mb-1 text-[var(--fg)]">Description</label>
               <textarea
                 value={newRestaurant.description}
-                onChange={(e) => setNewRestaurant({ ...newRestaurant, description: e.target.value })}
+                onChange={handleDescriptionChange}
                 className="w-full px-3 py-2 border border-[var(--fg-20)] rounded-lg bg-[var(--color-white)] text-[var(--fg)]"
                 rows={3}
                 placeholder="Restaurant description"
@@ -617,15 +743,41 @@ export const AdminClient = memo(function AdminClient({ initialRestaurants }: Adm
             <div className="flex gap-3 mt-6">
               <button
                 onClick={handleAddRestaurant}
-                className="flex-1 px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg font-medium hover:bg-[var(--color-primary)]/90"
+                className="flex-1 px-3 py-2 sm:px-4 bg-[var(--color-primary)] text-white rounded-lg font-medium hover:bg-[var(--color-primary)]/90"
               >
                 Add Restaurant
               </button>
               <button
                 onClick={() => setIsAddModalOpen(false)}
-                className="flex-1 px-4 py-2 bg-[var(--fg-10)] text-[var(--fg)] rounded-lg font-medium hover:bg-[var(--fg-20)]"
+                className="flex-1 px-3 py-2 sm:px-4 bg-[var(--fg-10)] text-[var(--fg)] rounded-lg font-medium hover:bg-[var(--fg-20)]"
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-[var(--card-bg)] rounded-[var(--radius-xl)] p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold text-[var(--fg)] mb-2">{t("deleteConfirmation")}</h3>
+            <p className="text-sm text-[var(--fg-70)] mb-6">
+              {t("deleteConfirmMessage")}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700"
+              >
+                {t("yesDelete")}
+              </button>
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                className="flex-1 px-4 py-2 bg-[var(--fg-10)] text-[var(--fg)] rounded-lg font-medium hover:bg-[var(--fg-20)]"
+              >
+                {t("cancel")}
               </button>
             </div>
           </div>

@@ -1,0 +1,114 @@
+name: Dependency Updates
+
+on:
+  schedule:
+    - cron: '0 9 * * 1' # Every Monday at 9:00 AM
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  update-dependencies:
+    name: Check for Security Updates
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Check for security vulnerabilities
+        id: audit
+        run: |
+          echo "Running security audit..."
+          bun audit 2>&1 | tee audit-results.txt || true
+          
+          # Count vulnerabilities
+          if grep -q "vulnerabilities" audit-results.txt; then
+            echo "has_vulnerabilities=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_vulnerabilities=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check for outdated packages
+        id: outdated
+        run: |
+          echo "Checking for outdated packages..."
+          bunx npm-check-updates --jsonUpgraded > outdated.json 2>/dev/null || echo "{}" > outdated.json
+          
+          # Check if there are updates
+          updates=$(cat outdated.json)
+          if [ "$updates" != "{}" ]; then
+            echo "has_updates=true" >> $GITHUB_OUTPUT
+            echo "Updates available:"
+            cat outdated.json
+          else
+            echo "has_updates=false" >> $GITHUB_OUTPUT
+            echo "All packages are up to date"
+          fi
+
+      - name: Create issue for vulnerabilities
+        if: steps.audit.outputs.has_vulnerabilities == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const auditResults = fs.readFileSync('audit-results.txt', 'utf8');
+            
+            // Check if issue already exists
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'security,automated'
+            });
+            
+            const hasExisting = existingIssues.data.some(
+              issue => issue.title.includes('Security Vulnerabilities Detected')
+            );
+            
+            if (!hasExisting) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '🔒 Security Vulnerabilities Detected in Dependencies',
+                body: `## Security Audit Results\n\n\`\`\`\n${auditResults}\n\`\`\`\n\n### Action Required\nPlease review and update the affected packages.\n\n---\n*This issue was automatically created by the security workflow.*`,
+                labels: ['security', 'automated', 'dependencies']
+              });
+            }
+
+      - name: Generate update summary
+        if: steps.outdated.outputs.has_updates == 'true' || steps.audit.outputs.has_vulnerabilities == 'true'
+        run: |
+          echo "# 📦 Dependency Update Summary" > update-summary.md
+          echo "" >> update-summary.md
+          echo "Generated: $(date -u)" >> update-summary.md
+          echo "" >> update-summary.md
+          
+          if [ -f audit-results.txt ]; then
+            echo "## Security Audit" >> update-summary.md
+            echo '```' >> update-summary.md
+            cat audit-results.txt >> update-summary.md
+            echo '```' >> update-summary.md
+            echo "" >> update-summary.md
+          fi
+          
+          if [ -f outdated.json ]; then
+            echo "## Outdated Packages" >> update-summary.md
+            echo '```json' >> update-summary.md
+            cat outdated.json >> update-summary.md
+            echo '```' >> update-summary.md
+          fi
+
+      - name: Upload summary
+        if: steps.outdated.outputs.has_updates == 'true' || steps.audit.outputs.has_vulnerabilities == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-update-summary
+          path: update-summary.md
+          retention-days: 30

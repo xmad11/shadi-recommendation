@@ -1,0 +1,107 @@
+title = "Gitleaks Configuration for Shadi Recommendations"
+
+# ─── Custom Rules ─────────────────────────────────────────────────────────────
+
+[[rules]]
+id = "supabase-service-key"
+description = "Supabase Service Role Key"
+regex = '''(?i)(service[_-]?role[_-]?key|supabase[_-]?service)[=:\s]["']?[a-zA-Z0-9._-]{20,}["']?'''
+tags = ["key", "supabase", "secret", "critical"]
+keywords = ["service_role", "supabase_service"]
+
+[[rules]]
+id = "supabase-jwt-secret"
+description = "Supabase JWT Secret"
+regex = '''(?i)jwt[_-]?secret[=:\s]["']?[a-zA-Z0-9._-]{32,}["']?'''
+tags = ["key", "jwt", "secret", "critical"]
+keywords = ["jwt_secret", "jwt-secret"]
+
+[[rules]]
+id = "database-url-password"
+description = "Database connection URL with password"
+regex = '''postgres(ql)?://[^:]+:[^@]+@[^/]+'''
+tags = ["database", "password", "critical"]
+keywords = ["postgres://", "postgresql://"]
+
+[[rules]]
+id = "generic-api-key"
+description = "Generic API key pattern"
+regex = '''(?i)(api[_-]?key|access[_-]?token|secret[_-]?key)[=:\s]["']?[a-zA-Z0-9._-]{16,}["']?'''
+tags = ["key", "api", "secret"]
+keywords = ["api_key", "api-key", "access_token", "secret_key"]
+
+[[rules]]
+id = "private-key"
+description = "Private key file content"
+regex = '''-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----'''
+tags = ["key", "private", "critical"]
+keywords = ["PRIVATE KEY"]
+
+[[rules]]
+id = "stripe-key"
+description = "Stripe API key"
+regex = '''(?i)sk_live_[a-zA-Z0-9]{24,}'''
+tags = ["key", "stripe", "payment", "critical"]
+keywords = ["sk_live_"]
+
+[[rules]]
+id = "google-api-key"
+description = "Google API key"
+regex = '''AIza[0-9A-Za-z_-]{35}'''
+tags = ["key", "google", "api"]
+keywords = ["AIza"]
+
+[[rules]]
+id = "aws-access-key"
+description = "AWS Access Key ID"
+regex = '''(?i)AKIA[0-9A-Z]{16}'''
+tags = ["key", "aws", "critical"]
+keywords = ["AKIA"]
+
+[[rules]]
+id = "email-password"
+description = "Email service password"
+regex = '''(?i)(smtp|mail|email)[_-]?(password|pass)[=:\s]["']?[^\s"']{8,}["']?'''
+tags = ["password", "email", "secret"]
+keywords = ["smtp_password", "mail_password", "email_password"]
+
+# ─── Allowlist ────────────────────────────────────────────────────────────────
+
+[allowlist]
+description = "Allowed files and patterns"
+
+# Files that are safe to ignore
+paths = [
+    '''.env.example''',
+    '''.env.sample''',
+    '''.env.local.example''',
+    '''**/*.test.ts''',
+    '''**/*.test.tsx''',
+    '''**/*.spec.ts''',
+    '''**/*.spec.tsx''',
+    '''**/tests/**''',
+    '''**/test/**''',
+    '''**/__tests__/**''',
+    '''**/__mocks__/**''',
+    '''**/mock/**''',
+    '''**/fixtures/**''',
+    '''security.txt''',
+    '''*.md''',
+    '''bun.lock''',
+    '''package-lock.json''',
+]
+
+# Patterns that are safe to ignore (example values, placeholders)
+regexes = [
+    '''example[_-]?(key|token|secret)''',
+    '''test[_-]?(key|token|secret|password)''',
+    '''dummy[_-]?.*''',
+    '''placeholder[_-]?.*''',
+    '''your[_-]?(api[_-]?key|secret|token)''',
+    '''xxx+''',
+    '''NEXT_PUBLIC_SUPABASE_URL''',
+    '''NEXT_PUBLIC_SUPABASE_ANON_KEY''',
+]
+
+# Commits that are safe to ignore
+commits = []

@@ -49,10 +49,21 @@
     "// UTILITIES": "Helper commands",
     "clean": "rm -rf .next .turbo node_modules/.cache",
     "clean:audit": "rm -rf .audit/*.log && echo 'Audit logs cleaned'",
-    "typecheck": "tsc --noEmit --incremental false"
+    "typecheck": "tsc --noEmit --incremental false",
+    "// SECURITY": "Security testing and auditing",
+    "security:headers": "bun run scripts/test-security-headers.ts",
+    "security:env": "bun run scripts/audit-env.ts",
+    "security:monitor": "bun run scripts/security-monitor.ts",
+    "security:sbom": "bun run scripts/generate-sbom.ts",
+    "security:check": "bun run security:env && bun run typecheck",
+    "security:full": "bun run security:monitor && bun run security:sbom",
+    "test:security": "bun test tests/security/"
   },
   "lint-staged": {
-    "*.{ts,tsx}": ["biome check --write", "biome format --write"]
+    "*.{ts,tsx}": [
+      "biome check --write",
+      "biome format --write"
+    ]
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
@@ -60,17 +71,15 @@
     "blurhash": "^2.0.5",
     "clsx": "^2.1.1",
     "embla-carousel-react": "^8.6.0",
-    "keen-slider": "^6.8.6",
     "lucide-react": "^0.562.0",
     "next": "^16.1.1",
     "postcss": "^8.5.6",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "recharts": "^3.6.0",
     "sharp": "^0.34.5",
-    "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
-    "tailwindcss": "^4.1.18"
+    "tailwindcss": "^4.1.18",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
