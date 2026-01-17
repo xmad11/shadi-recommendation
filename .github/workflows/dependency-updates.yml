@@ -107,7 +107,7 @@ jobs:
 
       - name: Upload summary
         if: steps.outdated.outputs.has_updates == 'true' || steps.audit.outputs.has_vulnerabilities == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: dependency-update-summary
           path: update-summary.md
