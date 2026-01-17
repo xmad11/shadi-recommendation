@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronDown, X } from "lucide-react"
+import { X } from "lucide-react"
 import { useMemo, useCallback } from "react"
 import type { MealType, AtmosphereType } from "@/types/restaurant"
 
@@ -30,7 +30,7 @@ export type AtmosphereOption = "all" | AtmosphereType
 ========================= */
 
 const CUISINES = [
-  { id: "all", label: "All Cuisines" },
+  { id: "all", label: "Cuisine" },
   { id: "emirati", label: "Emirati" },
   { id: "arabic", label: "Arabic" },
   { id: "lebanese", label: "Lebanese" },
@@ -45,14 +45,14 @@ const CUISINES = [
 ] as const
 
 const MEALS = [
-  { id: "all", label: "All Meals" },
+  { id: "all", label: "Meal" },
   { id: "Breakfast", label: "Breakfast" },
   { id: "Lunch", label: "Lunch" },
   { id: "Dinner", label: "Dinner" },
 ] as const
 
 const ATMOSPHERES = [
-  { id: "all", label: "All Atmospheres" },
+  { id: "all", label: "Atmosphere" },
   { id: "Romantic", label: "Romantic" },
   { id: "Casual", label: "Casual" },
   { id: "Fine Dining", label: "Fine Dining" },
@@ -75,21 +75,18 @@ interface DropdownProps {
 
 function Dropdown({ label, value, onChange, options }: DropdownProps) {
   return (
-    <div className="relative">
-      <div className="relative">
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full appearance-none bg-white border border-[var(--fg-20)] rounded-lg px-2 sm:px-4 py-2.5 pr-8 sm:pr-10 text-sm font-medium text-[var(--fg)] cursor-pointer transition-all hover:border-[var(--fg-30)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
-        >
-          {options.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--fg-50)] pointer-events-none" strokeWidth={2} />
-      </div>
+    <div className="relative flex-1 min-w-0">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full appearance-none bg-white border border-[var(--fg-20)] rounded-[var(--radius-lg)] px-[var(--spacing-xs)] py-[var(--spacing-xs)] text-sm font-medium text-[var(--fg)] cursor-pointer transition-all hover:border-[var(--fg-30)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent text-center"
+      >
+        {options.map((option) => (
+          <option key={option.id} value={option.id}>
+            {option.label}
+          </option>
+        ))}
+      </select>
     </div>
   )
 }
@@ -98,17 +95,27 @@ function Dropdown({ label, value, onChange, options }: DropdownProps) {
    Active Badge Component
 ========================= */
 
+type FilterType = "cuisine" | "meal" | "atmosphere"
+
 function ActiveBadge({
   label,
   onRemove,
+  type,
 }: {
   label: string
   onRemove: () => void
+  type: FilterType
 }) {
+  const colors = {
+    cuisine: "bg-[var(--color-primary)]/10 text-[var(--color-primary)]",
+    meal: "bg-[var(--color-secondary)]/10 text-[var(--color-secondary)]",
+    atmosphere: "bg-[var(--color-success)]/10 text-[var(--color-success)]",
+  }
+
   return (
     <button
       onClick={onRemove}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black text-white text-xs font-medium hover:bg-black/80 transition-colors"
+      className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full ${colors[type]} text-xs font-medium hover:opacity-80 transition-opacity`}
     >
       {label}
       <X className="w-3 h-3" />
@@ -144,15 +151,15 @@ export function FilterSystem({
 
   // Memoize activeFilters to prevent recreation on every render
   const activeFilters = useMemo(() => [
-    cuisine !== "all" ? { label: cuisine, remove: handleRemoveCuisine } : null,
-    meal !== "all" ? { label: meal, remove: handleRemoveMeal } : null,
-    atmosphere !== "all" ? { label: atmosphere, remove: handleRemoveAtmosphere } : null,
+    cuisine !== "all" ? { label: cuisine, remove: handleRemoveCuisine, type: "cuisine" as FilterType } : null,
+    meal !== "all" ? { label: meal, remove: handleRemoveMeal, type: "meal" as FilterType } : null,
+    atmosphere !== "all" ? { label: atmosphere, remove: handleRemoveAtmosphere, type: "atmosphere" as FilterType } : null,
   ].filter(Boolean), [cuisine, meal, atmosphere, handleRemoveCuisine, handleRemoveMeal, handleRemoveAtmosphere])
 
   return (
-    <div className="space-y-4">
-      {/* Dropdowns */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="space-y-[var(--spacing-md)]">
+      {/* Dropdowns - always horizontal */}
+      <div className="flex justify-center gap-[var(--spacing-xs)]">
         <Dropdown
           label="Meal"
           value={meal}
@@ -173,15 +180,16 @@ export function FilterSystem({
         />
       </div>
 
-      {/* Active Filters */}
+      {/* Active Filters - scrollable in one line */}
       {activeFilters.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap pt-2">
-          <span className="text-xs text-[var(--fg-50)]">Active filters:</span>
+        <div className="flex items-center gap-[var(--spacing-xs)] overflow-x-auto pb-[var(--spacing-xs)] scrollbar-hide">
+          <span className="text-xs text-[var(--fg-50)] flex-shrink-0">Active filters:</span>
           {activeFilters.map((filter) => (
             <ActiveBadge
               key={filter!.label}
               label={filter!.label}
               onRemove={filter!.remove}
+              type={filter!.type}
             />
           ))}
         </div>

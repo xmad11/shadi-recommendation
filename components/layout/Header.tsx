@@ -119,10 +119,12 @@ function AppHeaderComponent() {
             <button
               type="button"
               onClick={toggleLanguage}
-              className="px-[var(--spacing-sm)] py-[var(--spacing-xs)] rounded-[var(--radius-lg)] bg-[var(--glass-bg)] backdrop-blur-[var(--glass-blur)] text-[var(--fg)] font-medium transition-colors touch-target hover:bg-[var(--fg-5)]"
+              className="transition-all active:scale-95 group relative p-[var(--spacing-sm)] touch-target"
               aria-label="Toggle language"
             >
-              {buttonLabel}
+              <span className="h-[var(--icon-size-lg)] w-[var(--icon-size-lg)] text-[var(--fg)] flex items-center justify-center font-semibold">
+                {buttonLabel}
+              </span>
             </button>
 
             <button

@@ -228,7 +228,7 @@ export const ResultsClient = memo(function ResultsClient({ initialData }: Result
 
   return (
     <>
-      <div className="w-full sm:max-w-[var(--page-max-width)] mx-auto px-[var(--spacing-md)] sm:px-[var(--page-padding-x)] mt-[var(--spacing-md)]">
+      <div className="w-full sm:max-w-[var(--page-max-width)] mx-auto px-[var(--space-1)] sm:px-[var(--page-padding-x)] mt-[var(--spacing-md)]">
         <div className="space-y-[var(--spacing-lg)]">
           <FilterSystem
             cuisine={cuisine}
@@ -258,7 +258,7 @@ export const ResultsClient = memo(function ResultsClient({ initialData }: Result
         </div>
       </div>
 
-      <div className="w-full sm:max-w-[var(--page-max-width)] mx-auto sm:px-[var(--page-padding-x)] mt-[var(--spacing-lg)]">
+      <div className="w-full sm:max-w-[var(--page-max-width)] mx-auto px-[var(--space-1)] sm:px-[var(--page-padding-x)] mt-[var(--spacing-lg)]">
         <CardGrid viewMode={viewMode}>
           {filteredRestaurants.map((r) => (
             <RestaurantCard
